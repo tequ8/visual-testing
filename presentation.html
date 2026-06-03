@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Testy wizualne komponentów – POC</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/monokai.css" />
+  <style>
+    :root {
+      --c-brand:   #4f46e5;
+      --c-brand2:  #7c3aed;
+      --c-ok:      #16a34a;
+      --c-warn:    #d97706;
+      --c-danger:  #dc2626;
+      --c-bg-soft: #f5f3ff;
+    }
+
+    .reveal { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 30px; }
+    .reveal h1, .reveal h2, .reveal h3 { color: var(--c-brand); font-weight: 700; }
+    .reveal h1 { font-size: 1.8em; }
+    .reveal h2 { font-size: 1.2em; border-bottom: 2px solid var(--c-brand); padding-bottom: .2em; margin-bottom: .4em; }
+
+    /* ── pill chips ── */
+    .pill {
+      display: inline-block;
+      padding: .18em .7em;
+      border-radius: 999px;
+      font-size: .7em;
+      font-weight: 600;
+      vertical-align: middle;
+      margin: 0 .15em;
+    }
+    .pill-blue   { background: #dbeafe; color: #1d4ed8; }
+    .pill-purple { background: #ede9fe; color: #6d28d9; }
+    .pill-green  { background: #dcfce7; color: #15803d; }
+    .pill-red    { background: #fee2e2; color: #b91c1c; }
+    .pill-amber  { background: #fef3c7; color: #b45309; }
+    .pill-gray   { background: #f3f4f6; color: #374151; }
+
+    /* ── flow diagram ── */
+    .flow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      flex-wrap: wrap;
+      margin: 1.2em 0;
+    }
+    .flow-box {
+      background: var(--c-bg-soft);
+      border: 2px solid var(--c-brand);
+      border-radius: 8px;
+      padding: .3em .7em;
+      font-size: .65em;
+      font-weight: 600;
+      color: #1e1b4b;
+      text-align: center;
+      min-width: 80px;
+    }
+    .flow-arrow {
+      color: var(--c-brand);
+      font-size: 1em;
+      padding: 0 .2em;
+      font-weight: 700;
+    }
+
+    /* ── comparison table ── */
+    .cmp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .68em;
+    }
+    .cmp-table th {
+      background: var(--c-brand);
+      color: #fff;
+      padding: .55em .8em;
+      text-align: left;
+    }
+    .cmp-table td {
+      padding: .5em .8em;
+      border-bottom: 1px solid #e5e7eb;
+      vertical-align: top;
+    }
+    .cmp-table tr:nth-child(even) td { background: #f9fafb; }
+    .cmp-table .winner { font-weight: 700; color: var(--c-brand); }
+
+    /* ── pros / cons ── */
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .6em;
+      font-size: .65em;
+    }
+    .pros-cons ul { margin: .25em 0 0; padding-left: 1.1em; }
+    .pros-cons li { margin: .2em 0; }
+    .box-pro  { background: #f0fdf4; border-left: 4px solid var(--c-ok);     border-radius: 6px; padding: .4em .8em; }
+    .box-con  { background: #fff7ed; border-left: 4px solid var(--c-warn);    border-radius: 6px; padding: .4em .8em; }
+    .box-pro h4 { color: var(--c-ok);    margin: 0 0 .3em; font-size: .95em; }
+    .box-con h4 { color: var(--c-warn);  margin: 0 0 .3em; font-size: .95em; }
+
+    /* ── two-col layout ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2em;
+      align-items: start;
+    }
+
+    /* ── verdict card ── */
+    .verdict {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1em;
+      margin-top: .8em;
+    }
+    .verdict-card {
+      border-radius: 12px;
+      padding: 1em 1.2em;
+      font-size: .72em;
+    }
+    .verdict-card h3 { margin: 0 0 .5em; font-size: 1.1em; }
+    .verdict-card ul { margin: 0; padding-left: 1.2em; }
+    .verdict-card li { margin: .25em 0; }
+    .v-storycap  { background: #ede9fe; border: 2px solid #7c3aed; }
+    .v-storycap h3 { color: #6d28d9; }
+    .v-playwright { background: #dbeafe; border: 2px solid #2563eb; }
+    .v-playwright h3 { color: #1d4ed8; }
+
+    /* ── timeline ── */
+    .timeline {
+      display: flex;
+      flex-direction: column;
+      gap: .5em;
+      font-size: .72em;
+      position: relative;
+      padding-left: 1.6em;
+    }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: .55em;
+      top: .4em;
+      bottom: .4em;
+      width: 2px;
+      background: var(--c-brand);
+    }
+    .tl-item {
+      position: relative;
+      background: var(--c-bg-soft);
+      border-radius: 6px;
+      padding: .3em .7em;
+    }
+    .tl-item::before {
+      content: '';
+      position: absolute;
+      left: -1.18em;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 10px; height: 10px;
+      background: var(--c-brand);
+      border-radius: 50%;
+    }
+    .tl-item strong { color: var(--c-brand); }
+
+    /* code font size */
+    .reveal pre { font-size: .55em; }
+    .reveal code { font-size: .9em; }
+
+    /* title slide */
+    .title-eyebrow {
+      font-size: .65em;
+      font-weight: 600;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: var(--c-brand2);
+      margin-bottom: .4em;
+    }
+    .title-sub {
+      font-size: .8em;
+      color: #6b7280;
+      margin-top: .8em;
+    }
+    .title-stack {
+      display: flex;
+      justify-content: center;
+      gap: .5em;
+      margin-top: 1em;
+      flex-wrap: wrap;
+    }
+
+    /* number badge */
+    .num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.6em; height: 1.6em;
+      background: var(--c-brand);
+      color: #fff;
+      border-radius: 50%;
+      font-size: .75em;
+      font-weight: 700;
+      margin-right: .4em;
+      flex-shrink: 0;
+    }
+
+    /* icon emoji helper */
+    .icon { font-style: normal; }
+
+    .text-ok     { color: var(--c-ok); }
+    .text-warn   { color: var(--c-warn); }
+    .text-danger { color: var(--c-danger); }
+    .text-muted  { color: #6b7280; font-size: .85em; }
+  </style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 1 – TYTUŁ
+════════════════════════════════════════════════════════════ -->
+<section>
+  <div class="title-eyebrow">Proof of Concept</div>
+  <h1>Testy wizualne<br>komponentów UI</h1>
+  <p class="title-sub">Automatyczne wykrywanie regresji wyglądu<br>w środowisku Storybook + Angular</p>
+  <div class="title-stack">
+    <span class="pill pill-purple">Angular 21</span>
+    <span class="pill pill-blue">Storybook 10</span>
+    <span class="pill pill-gray">Storycap + Jest</span>
+    <span class="pill pill-blue">Playwright</span>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 2 – PROBLEM
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Problem — co chcemy rozwiązać?</h2>
+  <div class="two-col" style="margin-top:.8em">
+    <div>
+      <p style="font-size:.75em;color:#374151;margin-bottom:.6em">
+        Każda zmiana w CSS, szablonie lub bibliotece ikon może <strong>niezauważalnie</strong> zmienić wygląd komponentu.
+      </p>
+      <ul style="font-size:.72em;line-height:1.7">
+        <li>Code review nie wychwytuje zmian wizualnych</li>
+        <li>Testy jednostkowe / e2e sprawdzają <em>zachowanie</em>, nie <em>wygląd</em></li>
+        <li>Ręczne przeglądanie każdej story po każdym PR jest nieefektywne</li>
+        <li>Regresje wykrywane dopiero na produkcji</li>
+      </ul>
+    </div>
+    <div style="background:#fff5f5;border:2px solid #fca5a5;border-radius:12px;padding:1em;font-size:.68em">
+      <p style="margin:0 0 .5em;font-weight:700;color:#dc2626">Przykładowe regresje</p>
+      <ul style="padding-left:1.2em;margin:0;line-height:1.8">
+        <li>Zmiana <code>padding</code> w tokenie design systemu</li>
+        <li>Upgrade biblioteki ikon → inny rozmiar SVG</li>
+        <li>Nadpisanie <code>font-family</code> przez globalny styl</li>
+        <li>Zmiana wersji Angular Material</li>
+        <li>Refactor SCSS → niezamierzona zmiana specificity</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 3 – ROZWIĄZANIE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Rozwiązanie — testy wizualne</h2>
+  <div class="flow" style="margin:1em 0">
+    <div class="flow-box">Storybook<br><small>izolowana story</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Screenshot<br><small>aktualny wygląd</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Porównanie<br><small>pixel-by-pixel</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box">Raport<br><small>diff image</small></div>
+  </div>
+  <p style="font-size:.72em;text-align:center;color:#6b7280;margin-bottom:1em">
+    Każda story = izolowany przypadek testowy dla konkretnego stanu komponentu
+  </p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1em;font-size:.72em">
+    <div style="background:#f5f3ff;border-radius:10px;padding:.8em 1em;border:2px solid #c4b5fd">
+      <strong style="color:#6d28d9">Podejście 1</strong><br>
+      <span>Storycap + jest-image-snapshot + Jest</span><br>
+      <span class="text-muted">Puppeteer robi screenshoty → Jest porównuje z baseline</span>
+    </div>
+    <div style="background:#dbeafe;border-radius:10px;padding:.8em 1em;border:2px solid #93c5fd">
+      <strong style="color:#1d4ed8">Podejście 2</strong><br>
+      <span>Playwright Visual Testing</span><br>
+      <span class="text-muted">Playwright otwiera story, robi screenshot, porównuje</span>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 4 – KOMPONENTY POC
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Komponenty w POC</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8em;font-size:.68em;margin-top:.8em">
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:.8em">
+      <p style="margin:0 0 .5em;font-weight:700;color:var(--c-brand)">ButtonComponent</p>
+      <p style="margin:0 0 .4em;color:#6b7280">Warianty &amp; rozmiary</p>
+      <ul style="margin:0;padding-left:1.1em;line-height:1.8">
+        <li>Primary / Secondary</li>
+        <li>Small / Medium / Large</li>
+        <li>Disabled</li>
+        <li><strong>8 stories</strong></li>
+      </ul>
+    </div>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:.8em">
+      <p style="margin:0 0 .5em;font-weight:700;color:var(--c-brand)">InputComponent</p>
+      <p style="margin:0 0 .4em;color:#6b7280">Stany pola formularza</p>
+      <ul style="margin:0;padding-left:1.1em;line-height:1.8">
+        <li>Default</li>
+        <li>Focused</li>
+        <li>Error (+ komunikat)</li>
+        <li>Disabled</li>
+        <li><strong>5 stories</strong></li>
+      </ul>
+    </div>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:.8em">
+      <p style="margin:0 0 .5em;font-weight:700;color:var(--c-brand)">CardComponent</p>
+      <p style="margin:0 0 .4em;color:#6b7280">Warianty karty</p>
+      <ul style="margin:0;padding-left:1.1em;line-height:1.8">
+        <li>Simple</li>
+        <li>With Subtitle</li>
+        <li>With Footer (akcje)</li>
+        <li>Content Only</li>
+        <li><strong>5 stories</strong></li>
+      </ul>
+    </div>
+  </div>
+  <p style="text-align:center;font-size:.72em;margin-top:.8em">
+    Łącznie <strong>18 stories</strong> objętych testami wizualnymi w obu podejściach
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 5 – PODEJŚCIE 1: STORYCAP (overview)
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 1 — Storycap + Jest</h2>
+  <div class="flow" style="margin:.8em 0">
+    <div class="flow-box" style="background:#ede9fe;border-color:#7c3aed">Storybook<br>dev server</div>
+    <div class="flow-arrow" style="color:#7c3aed">→</div>
+    <div class="flow-box" style="background:#ede9fe;border-color:#7c3aed">Storycap<br>(Puppeteer)</div>
+    <div class="flow-arrow" style="color:#7c3aed">→</div>
+    <div class="flow-box" style="background:#ede9fe;border-color:#7c3aed"><code>__screenshots__/</code><br>PNG pliki</div>
+    <div class="flow-arrow" style="color:#7c3aed">→</div>
+    <div class="flow-box" style="background:#ede9fe;border-color:#7c3aed">Jest +<br>jest-image-snapshot</div>
+    <div class="flow-arrow" style="color:#7c3aed">→</div>
+    <div class="flow-box" style="background:#ede9fe;border-color:#7c3aed">Baseline<br>porównanie</div>
+  </div>
+  <div class="timeline">
+    <div class="tl-item"><strong>1.</strong> <code>storycap</code> uruchamia Storybook i otwiera każdą story przez headless Chromium</div>
+    <div class="tl-item"><strong>2.</strong> Każda story zapisywana jako PNG: <code>Components_Button_Primary.png</code></div>
+    <div class="tl-item"><strong>3.</strong> <code>jest-image-snapshot</code> porównuje PNG z baseline'em pixel-po-pikselu</div>
+    <div class="tl-item"><strong>4.</strong> Różnica &gt; 2% → test FAIL + generowany diff image</div>
+    <div class="tl-item"><strong>5.</strong> <code>-u</code> flag nadpisuje baseline po celowej zmianie UI</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 6 – PODEJŚCIE 1: KOD
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 1 — kod testu</h2>
+  <div class="two-col">
+    <div>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin-bottom:.3em">visual-tests/storycap.test.ts</p>
+      <pre><code class="language-typescript">import { configureToMatchImageSnapshot }
+  from 'jest-image-snapshot';
+import * as fs from 'fs';
+import * as path from 'path';
+
+const toMatchImageSnapshot =
+  configureToMatchImageSnapshot({
+    customSnapshotsDir:
+      '__screenshots_baseline__',
+    failureThreshold: 0.02,        // 2%
+    failureThresholdType: 'percent',
+  });
+
+expect.extend({ toMatchImageSnapshot });
+
+describe('Button component', () => {
+  it('Primary button matches baseline', () => {
+    const png = fs.readFileSync(
+      '__screenshots__/Components_Button_Primary.png'
+    );
+    (expect(png) as any)
+      .toMatchImageSnapshot({
+        customSnapshotIdentifier:
+          'button-primary',
+      });
+  });
+});</code></pre>
+    </div>
+    <div>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin-bottom:.3em">Komendy</p>
+      <pre><code class="language-bash"># Pierwsze uruchomienie
+# → tworzy baseline
+npm run test:visual:storycap
+
+# Wykrywanie regresji
+npm run test:visual:storycap
+
+# Po celowej zmianie UI
+npm run test:visual:storycap:update</code></pre>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin:.8em 0 .3em">Struktura plików</p>
+      <pre><code class="language-text">__screenshots__/
+  Components_Button_Primary.png
+  Components_Input_Error.png
+  ...
+__screenshots_baseline__/
+  button-primary.png
+  input-error.png
+  ...
+__screenshots_diff__/
+  button-primary-diff.png  ← przy regresji</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 7 – PODEJŚCIE 1: PROS/CONS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 1 — zalety i wady</h2>
+  <div class="pros-cons" style="margin-top:.8em">
+    <div class="box-pro">
+      <h4>✅ Zalety</h4>
+      <ul>
+        <li>Screenshoty <strong>wszystkich stories automatycznie</strong> — nie trzeba pisać testu dla każdej</li>
+        <li>Doskonała integracja z istniejącymi pipeline'ami Jest</li>
+        <li>Prosta konfiguracja progu tolerancji (<code>failureThreshold</code>)</li>
+        <li>Storycap równolegle capture'uje wiele stories</li>
+        <li>Diff image jest czytelny i łatwy do debugowania</li>
+        <li>Znajomy ekosystem dla team'u używającego Jest</li>
+      </ul>
+    </div>
+    <div class="box-con">
+      <h4>⚠️ Wady</h4>
+      <ul>
+        <li>Dwuetapowy pipeline — capture + compare są rozdzielone</li>
+        <li>Storycap oficjalnie wspiera Storybook 7/8 (używamy 10 z <code>--legacy-peer-deps</code>)</li>
+        <li>Screenshoty całej strony, nie tylko komponentu — tło i padding iFrame mogą wpływać na diff</li>
+        <li>Trudniejsze testy interaktywne (hover, focus states)</li>
+        <li>Brak wbudowanego HTML reportu z podglądem diffów</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 8 – PODEJŚCIE 2: PLAYWRIGHT (overview)
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 2 — Playwright</h2>
+  <div class="flow" style="margin:.8em 0">
+    <div class="flow-box" style="background:#dbeafe;border-color:#3b82f6">Playwright<br>webServer</div>
+    <div class="flow-arrow" style="color:#3b82f6">→</div>
+    <div class="flow-box" style="background:#dbeafe;border-color:#3b82f6">Storybook<br>auto-start</div>
+    <div class="flow-arrow" style="color:#3b82f6">→</div>
+    <div class="flow-box" style="background:#dbeafe;border-color:#3b82f6">iframe URL<br>story</div>
+    <div class="flow-arrow" style="color:#3b82f6">→</div>
+    <div class="flow-box" style="background:#dbeafe;border-color:#3b82f6"><code>toHave<br>Screenshot()</code></div>
+    <div class="flow-arrow" style="color:#3b82f6">→</div>
+    <div class="flow-box" style="background:#dbeafe;border-color:#3b82f6">HTML<br>report</div>
+  </div>
+  <div class="timeline">
+    <div class="tl-item"><strong>1.</strong> Playwright startuje Storybook automatycznie via <code>webServer</code> w configu (lub reużywa istniejący)</div>
+    <div class="tl-item"><strong>2.</strong> Test otwiera URL iframe'a konkretnej story: <code>/iframe.html?id=components-button--primary</code></div>
+    <div class="tl-item"><strong>3.</strong> Czeka na wyrenderowanie komponentu Angular (<code>waitForSelector</code>)</div>
+    <div class="tl-item"><strong>4.</strong> <code>expect(page).toHaveScreenshot()</code> — porównanie z baseline w <code>__snapshots__/</code></div>
+    <div class="tl-item"><strong>5.</strong> Przy błędzie → interaktywny HTML report z diff side-by-side</div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 9 – PODEJŚCIE 2: KOD
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 2 — kod testu</h2>
+  <div class="two-col">
+    <div>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin-bottom:.3em">e2e/visual/button.visual.spec.ts</p>
+      <pre><code class="language-typescript">import { test, expect, Page }
+  from '@playwright/test';
+
+async function gotoStory(
+  page: Page,
+  storyId: string
+): Promise&lt;void&gt; {
+  await page.goto(
+    `/iframe.html?id=${storyId}&viewMode=story`
+  );
+  await page.waitForLoadState(
+    'domcontentloaded'
+  );
+  await page.waitForSelector(
+    'app-button', { state: 'visible' }
+  );
+  await page.waitForTimeout(300);
+}
+
+test.describe('Button – visual', () => {
+  test.use({ viewport: {
+    width: 400, height: 200
+  }});
+
+  test('Primary button', async ({ page }) => {
+    await gotoStory(
+      page, 'components-button--primary'
+    );
+    await expect(page)
+      .toHaveScreenshot('button-primary.png');
+  });
+});</code></pre>
+    </div>
+    <div>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin-bottom:.3em">playwright.config.ts (fragment)</p>
+      <pre><code class="language-typescript">export default defineConfig({
+  testDir: './e2e',
+  use: {
+    baseURL: 'http://localhost:6006',
+    viewport: { width: 1280, height: 720 },
+  },
+  expect: {
+    toHaveScreenshot: {
+      maxDiffPixelRatio: 0.01,  // 1%
+      threshold: 0.1,
+    },
+  },
+  snapshotDir: '__snapshots__',
+  webServer: {
+    command: 'npm run storybook',
+    url: 'http://localhost:6006',
+    reuseExistingServer: true,
+  },
+});</code></pre>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin:.6em 0 .3em">Komendy</p>
+      <pre><code class="language-bash"># Tworzy baseline
+npm run test:visual:playwright:update
+
+# Wykrywa regresje
+npm run test:visual:playwright
+
+# Raport HTML
+npx playwright show-report</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10 – PODEJŚCIE 2: PROS/CONS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 2 — zalety i wady</h2>
+  <div class="pros-cons" style="margin-top:.8em">
+    <div class="box-pro">
+      <h4>✅ Zalety</h4>
+      <ul>
+        <li><strong>Interaktywny HTML report</strong> z diff side-by-side dostępny jedną komendą</li>
+        <li>Natywna obsługa wielu przeglądarek: Chrome, Firefox, Safari</li>
+        <li>Pełna kontrola nad testem — można symulować hover, klik, focus przed screenshotem</li>
+        <li>Doskonałe wsparcie CI/CD, Docker image z gotowym środowiskiem</li>
+        <li>Aktywnie rozwijane narzędzie z dużą społecznością</li>
+        <li>Jeden framework do E2E i visual testów</li>
+      </ul>
+    </div>
+    <div class="box-con">
+      <h4>⚠️ Wady</h4>
+      <ul>
+        <li>Trzeba <strong>ręcznie pisać test dla każdej story</strong> (brak auto-discovery jak w Storycap)</li>
+        <li>Screenshoty mogą różnić się między OS (font rendering) → konieczny Docker na CI</li>
+        <li>Większy rozmiar instalacji (przeglądarki Playwright ~300MB)</li>
+        <li>Nowy framework do nauki jeśli team używa tylko Jest</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 11 – TABELA PORÓWNAWCZA
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Porównanie — tabela</h2>
+  <table class="cmp-table" style="margin-top:.6em">
+    <thead>
+      <tr>
+        <th>Kryterium</th>
+        <th>🟣 Storycap + Jest</th>
+        <th>🔵 Playwright</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Auto-discovery stories</td>
+        <td class="winner">✅ Tak — wszystkie automatycznie</td>
+        <td>❌ Ręcznie dla każdej story</td>
+      </tr>
+      <tr>
+        <td>Interaktywny diff report</td>
+        <td>❌ Tylko pliki PNG</td>
+        <td class="winner">✅ HTML z side-by-side diffem</td>
+      </tr>
+      <tr>
+        <td>Multi-browser</td>
+        <td>Chromium only</td>
+        <td class="winner">Chrome, Firefox, Safari</td>
+      </tr>
+      <tr>
+        <td>Testy interakcji (hover/focus)</td>
+        <td>⚠️ Ograniczone</td>
+        <td class="winner">✅ Pełne wsparcie</td>
+      </tr>
+      <tr>
+        <td>Zgodność ze Storybook 10</td>
+        <td>⚠️ legacy-peer-deps</td>
+        <td class="winner">✅ Niezależny od wersji</td>
+      </tr>
+      <tr>
+        <td>CI/CD gotowość</td>
+        <td>Dobra</td>
+        <td class="winner">Doskonała (Docker image)</td>
+      </tr>
+      <tr>
+        <td>Krzywa uczenia</td>
+        <td class="winner">Niska (Jest znany)</td>
+        <td>Umiarkowana</td>
+      </tr>
+      <tr>
+        <td>Konfiguracja tolerancji</td>
+        <td>failureThreshold (%) </td>
+        <td>maxDiffPixelRatio + threshold</td>
+      </tr>
+      <tr>
+        <td>Czas dodania nowej story</td>
+        <td class="winner">Zero (auto)</td>
+        <td>~5 min (nowy test)</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 12 – WORKFLOW W PRAKTYCE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Workflow w praktyce</h2>
+  <div class="two-col" style="margin-top:.6em;gap:1.5em">
+    <div>
+      <p style="font-size:.72em;font-weight:700;color:#374151;margin-bottom:.5em">Cykl życia testu wizualnego</p>
+      <div class="timeline">
+        <div class="tl-item">Developer tworzy/modyfikuje komponent</div>
+        <div class="tl-item">Dodaje lub aktualizuje story w Storybooku</div>
+        <div class="tl-item">Uruchamia testy wizualne lokalnie</div>
+        <div class="tl-item" style="background:#fff7ed">
+          <span class="text-warn">⚠️</span> Niezamierzona regresja → <strong>FAIL</strong> → fix
+        </div>
+        <div class="tl-item" style="background:#fff7ed">
+          <span class="text-ok">✅</span> Celowa zmiana wyglądu → <strong>update baseline</strong> → commit
+        </div>
+        <div class="tl-item">PR → CI uruchamia testy → raport</div>
+        <div class="tl-item" style="background:#f0fdf4">
+          <span class="text-ok">✅</span> Baseline zatwierdzone → merge
+        </div>
+      </div>
+    </div>
+    <div>
+      <p style="font-size:.72em;font-weight:700;color:#374151;margin-bottom:.5em">CI/CD integration</p>
+      <pre style="font-size:.5em"><code class="language-yaml"># .github/workflows/visual.yml
+- name: Install dependencies
+  run: npm ci
+
+- name: Install Playwright browsers
+  run: npx playwright install --with-deps chromium
+
+- name: Run Playwright visual tests
+  run: npm run test:visual:playwright
+
+- name: Upload Playwright report
+  uses: actions/upload-artifact@v4
+  if: failure()
+  with:
+    name: playwright-report
+    path: playwright-report/</code></pre>
+      <p style="font-size:.65em;color:#6b7280;margin-top:.5em">
+        💡 Baseline PNG pliki <strong>commitujemy do repozytorium</strong> — są źródłem prawdy dla wszystkich deweloperów
+      </p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 13a – SYMULACJA REGRESJI: CO SIĘ ZMIENIŁO
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Demo: symulacja regresji wizualnej</h2>
+  <p style="font-size:.72em;color:#6b7280;margin:.3em 0 .8em">Typowy scenariusz — refactor designu bez aktualizacji testów</p>
+  <div class="two-col">
+    <div>
+      <p style="font-size:.65em;font-weight:700;color:#374151;margin-bottom:.4em">Zmiana w komponencie (symulacja)</p>
+      <pre><code class="language-diff">  /* button.component.ts */
+
+  button {
+-   border-radius: 4px;
++   border-radius: 20px;
+  }
+
+  button.variant-primary {
+-   background-color: #4f46e5;  /* indigo */
++   background-color: #dc2626;  /* red */
+    color: #ffffff;
+  }</code></pre>
+      <div style="background:#fff7ed;border-left:4px solid #f59e0b;border-radius:6px;padding:.6em .9em;font-size:.68em;margin-top:.7em">
+        <strong>Realny odpowiednik:</strong> zmiana design tokenu w bibliotece (np. <code>--color-primary</code>) lub upgrade Angular Material, który nadpisuje <code>border-radius</code>
+      </div>
+    </div>
+    <div>
+      <p style="font-size:.65em;font-weight:700;color:#374151;margin-bottom:.4em">Wynik uruchomienia testów</p>
+      <pre style="font-size:.48em"><code class="language-text">Running 8 tests using 1 worker
+
+  ✘  [chromium] Primary button
+  ✓  [chromium] Secondary button
+  ✘  [chromium] Disabled button
+  ✘  [chromium] Small Primary button
+  ✘  [chromium] Medium Primary button
+  ✘  [chromium] Large Primary button
+  ✓  [chromium] Small Secondary button
+  ✓  [chromium] Large Secondary button
+
+  5 failed, 3 passed
+
+  Error: toHaveScreenshot("button-primary.png") failed
+  2845 pixels (ratio 0.04 of all image pixels)
+  are different.</code></pre>
+      <div style="background:#f0fdf4;border-left:4px solid #22c55e;border-radius:6px;padding:.5em .9em;font-size:.68em;margin-top:.5em">
+        ✅ Secondary button <strong>przeszedł</strong> — zmiana dotyczyła tylko <code>variant-primary</code>. Testy izolują warianty!
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 13b – DIFF SCREENSHOTY
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Demo: jak wygląda diff?</h2>
+  <p style="font-size:.65em;color:#6b7280;margin:.1em 0 .5em">Playwright generuje 3 obrazy dla każdego nieudanego testu — Button Primary Medium</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1em;text-align:center">
+    <div>
+      <p style="font-size:.62em;font-weight:700;color:#374151;margin-bottom:.3em">✅ Baseline (oczekiwany)</p>
+      <div style="border:2px solid #e5e7eb;border-radius:8px;padding:.5em;background:#f9fafb;display:flex;align-items:center;justify-content:center;height:140px">
+        <img src="data:image/png;base64,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" style="max-width:100%;max-height:130px;image-rendering:pixelated" alt="baseline" />
+      </div>
+      <p style="font-size:.55em;color:#6b7280;margin-top:.3em">indigo, border-radius: 4px</p>
+    </div>
+    <div>
+      <p style="font-size:.62em;font-weight:700;color:#dc2626;margin-bottom:.3em">❌ Aktualny (po zmianie)</p>
+      <div style="border:2px solid #fca5a5;border-radius:8px;padding:.5em;background:#fff5f5;display:flex;align-items:center;justify-content:center;height:140px">
+        <img src="data:image/png;base64,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" style="max-width:100%;max-height:130px;image-rendering:pixelated" alt="actual" />
+      </div>
+      <p style="font-size:.55em;color:#6b7280;margin-top:.3em">red, border-radius: 20px</p>
+    </div>
+    <div>
+      <p style="font-size:.62em;font-weight:700;color:#7c3aed;margin-bottom:.3em">🔍 Diff (piksele różnicy)</p>
+      <div style="border:2px solid #c4b5fd;border-radius:8px;padding:.5em;background:#faf5ff;display:flex;align-items:center;justify-content:center;height:140px">
+        <img src="data:image/png;base64,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" style="max-width:100%;max-height:130px;image-rendering:pixelated" alt="diff" />
+      </div>
+      <p style="font-size:.55em;color:#6b7280;margin-top:.3em">różowe = zmienione piksele</p>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1em;font-size:.62em;margin-top:.7em">
+    <div style="background:#f0fdf4;border-radius:6px;padding:.4em .7em;text-align:center">
+      <strong>__snapshots__/</strong><br>button-primary.png
+    </div>
+    <div style="background:#fff5f5;border-radius:6px;padding:.4em .7em;text-align:center">
+      <strong>test-results/…/</strong><br>button-primary-actual.png
+    </div>
+    <div style="background:#faf5ff;border-radius:6px;padding:.4em .7em;text-align:center">
+      <strong>test-results/…/</strong><br>button-primary-diff.png
+    </div>
+  </div>
+  <p style="font-size:.6em;color:#6b7280;text-align:center;margin-top:.5em">Wynik: <strong>2845 różnych pikseli</strong> (4% viewportu) → test FAIL. Secondary button → PASS (zmiana nie dotknęła wariantu)</p>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 13d – REGRESJA PADDINGU
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Demo: regresja paddingu — <code>padding-top: 30px</code></h2>
+  <p style="font-size:.62em;color:#6b7280;margin:.1em 0 .4em">Zmiana design tokenu <code>--spacing-button-vertical</code> z <code>10px</code> na <code>30px</code> — button się "rozrasta"</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8em">
+
+    <div>
+      <p style="font-size:.6em;font-weight:700;color:#374151;margin:.1em 0 .3em">Medium Primary</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4em;text-align:center">
+        <div>
+          <p style="font-size:.55em;color:#6b7280;margin:0 0 .2em">Baseline</p>
+          <div style="border:2px solid #e5e7eb;border-radius:6px;padding:.3em;background:#f9fafb;display:flex;align-items:center;justify-content:center;height:90px">
+            <img src="data:image/png;base64,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" style="max-width:100%;max-height:85px;image-rendering:pixelated" alt="baseline md" />
+          </div>
+          <p style="font-size:.5em;color:#6b7280;margin-top:.2em">padding: 10px 20px</p>
+        </div>
+        <div>
+          <p style="font-size:.55em;color:#dc2626;margin:0 0 .2em">Aktualny</p>
+          <div style="border:2px solid #fca5a5;border-radius:6px;padding:.3em;background:#fff5f5;display:flex;align-items:center;justify-content:center;height:90px">
+            <img src="data:image/png;base64,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" style="max-width:100%;max-height:85px;image-rendering:pixelated" alt="actual md" />
+          </div>
+          <p style="font-size:.5em;color:#6b7280;margin-top:.2em">padding: 30px 20px</p>
+        </div>
+        <div>
+          <p style="font-size:.55em;color:#7c3aed;margin:0 0 .2em">Diff</p>
+          <div style="border:2px solid #c4b5fd;border-radius:6px;padding:.3em;background:#faf5ff;display:flex;align-items:center;justify-content:center;height:90px">
+            <img src="data:image/png;base64,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" style="max-width:100%;max-height:85px;image-rendering:pixelated" alt="diff md" />
+          </div>
+          <p style="font-size:.5em;color:#dc2626;margin-top:.2em">3782 px (5%)</p>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <p style="font-size:.6em;font-weight:700;color:#374151;margin:.1em 0 .3em">Small Primary</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4em;text-align:center">
+        <div>
+          <p style="font-size:.55em;color:#6b7280;margin:0 0 .2em">Baseline</p>
+          <div style="border:2px solid #e5e7eb;border-radius:6px;padding:.3em;background:#f9fafb;display:flex;align-items:center;justify-content:center;height:90px">
+            <img src="data:image/png;base64,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" style="max-width:100%;max-height:85px;image-rendering:pixelated" alt="baseline sm" />
+          </div>
+          <p style="font-size:.5em;color:#6b7280;margin-top:.2em">padding: 6px 12px</p>
+        </div>
+        <div>
+          <p style="font-size:.55em;color:#dc2626;margin:0 0 .2em">Aktualny</p>
+          <div style="border:2px solid #fca5a5;border-radius:6px;padding:.3em;background:#fff5f5;display:flex;align-items:center;justify-content:center;height:90px">
+            <img src="data:image/png;base64,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" style="max-width:100%;max-height:85px;image-rendering:pixelated" alt="actual sm" />
+          </div>
+          <p style="font-size:.5em;color:#6b7280;margin-top:.2em">padding: 30px 12px</p>
+        </div>
+        <div>
+          <p style="font-size:.55em;color:#7c3aed;margin:0 0 .2em">Diff</p>
+          <div style="border:2px solid #c4b5fd;border-radius:6px;padding:.3em;background:#faf5ff;display:flex;align-items:center;justify-content:center;height:90px">
+            <img src="data:image/png;base64,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" style="max-width:100%;max-height:85px;image-rendering:pixelated" alt="diff sm" />
+          </div>
+          <p style="font-size:.5em;color:#dc2626;margin-top:.2em">różnica obszar cały button</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6em;font-size:.6em;margin-top:.7em">
+    <div style="background:#fff5f5;border-left:3px solid #dc2626;border-radius:6px;padding:.4em .7em">
+      <strong>6/8 testów FAIL</strong> — wszystkie warianty primary i secondary-lg zostały wykryte
+    </div>
+    <div style="background:#f0fdf4;border-left:3px solid #22c55e;border-radius:6px;padding:.4em .7em">
+      <strong>2/8 PASS</strong> — Small Secondary i Medium Secondary: viewport był zbyt mały by uchwycić pełną zmianę
+    </div>
+    <div style="background:#f5f3ff;border-left:3px solid #7c3aed;border-radius:6px;padding:.4em .7em">
+      <strong>Zmiana kodu: 1 linia</strong> — <code>padding: 30px</code> zamiast <code>10px</code>. Bez testów: nikt by tego nie zauważył na code review
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 13c – CYKL NAPRAWY REGRESJI
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Demo: co robi developer po FAIL?</h2>
+  <div class="two-col" style="margin-top:.7em">
+    <div>
+      <p style="font-size:.72em;font-weight:700;color:var(--c-danger);margin-bottom:.4em">Scenariusz A — niezamierzona regresja</p>
+      <div class="timeline">
+        <div class="tl-item" style="background:#fff5f5">CI/CD zgłasza FAIL na PR → test wizualny wykrył zmianę</div>
+        <div class="tl-item">Developer otwiera <code>npx playwright show-report</code> — widzi diff side-by-side</div>
+        <div class="tl-item">Identyfikuje przyczynę: np. merge confliktu w SCSS</div>
+        <div class="tl-item">Naprawia kod komponentu</div>
+        <div class="tl-item" style="background:#f0fdf4">Testy przechodzą ✅ → PR gotowy do merge</div>
+      </div>
+    </div>
+    <div>
+      <p style="font-size:.72em;font-weight:700;color:var(--c-ok);margin-bottom:.4em">Scenariusz B — celowa zmiana designu</p>
+      <div class="timeline">
+        <div class="tl-item" style="background:#fff7ed">CI/CD zgłasza FAIL → zmiana jest zamierzona (np. nowy design token)</div>
+        <div class="tl-item">Developer weryfikuje diff — wygląd zgodny z projektem</div>
+        <div class="tl-item">Aktualizuje baseline: <code>playwright test --update-snapshots</code></div>
+        <div class="tl-item">Commituje nowe PNG do repozytorium wraz ze zmianą komponentu</div>
+        <div class="tl-item" style="background:#f0fdf4">PR zawiera: zmianę kodu + zaktualizowane screenshoty ✅</div>
+      </div>
+    </div>
+  </div>
+  <div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px;padding:.6em 1em;font-size:.68em;margin-top:.8em;text-align:center">
+    💡 Zaktualizowane baseline PNG widoczne w diff PR — reviewer <strong>widzi zmianę wizualną</strong> tak samo jak zmianę kodu
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 13 – WYNIK POC
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Wynik POC — Playwright</h2>
+  <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:1em;text-align:center;margin:.5em 0">
+    <p style="font-size:1.4em;font-weight:700;color:#15803d;margin:0">18 / 18 testów ✅</p>
+    <p style="font-size:.72em;color:#6b7280;margin:.3em 0 0">Czas wykonania: ~15.6s dla 3 komponentów × wszystkich stories</p>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7em;font-size:.68em;margin-top:.8em">
+    <div style="background:#f9fafb;border-radius:8px;padding:.7em;border:1px solid #e5e7eb">
+      <p style="margin:0 0 .3em;font-weight:700">Button</p>
+      <p style="margin:0;color:#15803d">8 stories ✅</p>
+      <p style="margin:.2em 0 0;color:#6b7280">Primary, Secondary, Disabled,<br>SM/MD/LG variants</p>
+    </div>
+    <div style="background:#f9fafb;border-radius:8px;padding:.7em;border:1px solid #e5e7eb">
+      <p style="margin:0 0 .3em;font-weight:700">Input</p>
+      <p style="margin:0;color:#15803d">5 stories ✅</p>
+      <p style="margin:.2em 0 0;color:#6b7280">Default, Focused, Error,<br>With Value, Disabled</p>
+    </div>
+    <div style="background:#f9fafb;border-radius:8px;padding:.7em;border:1px solid #e5e7eb">
+      <p style="margin:0 0 .3em;font-weight:700">Card</p>
+      <p style="margin:0;color:#15803d">5 stories ✅</p>
+      <p style="margin:.2em 0 0;color:#6b7280">Simple, With Subtitle,<br>With Footer, Content Only</p>
+    </div>
+  </div>
+  <p style="font-size:.68em;color:#6b7280;margin-top:.7em;text-align:center">
+    Baseline screenshoty zapisane w <code>__snapshots__/</code> — gotowe do commitu do repozytorium
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 14 – REKOMENDACJA
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Rekomendacja — które narzędzie wdrożyć?</h2>
+
+  <div style="background:#1e1b4b;border-radius:14px;padding:.8em 1.2em;margin:.5em 0 .7em;text-align:center">
+    <p style="color:#a5b4fc;font-size:.65em;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:0 0 .2em">Nasza rekomendacja</p>
+    <p style="color:#fff;font-size:.95em;font-weight:700;margin:0">Playwright jako primary visual testing framework</p>
+    <p style="color:#c7d2fe;font-size:.65em;margin:.3em 0 0">Storycap opcjonalnie jako uzupełniający smoke-test na CI</p>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7em;font-size:.67em">
+    <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:10px;padding:.8em 1em">
+      <p style="margin:0 0 .5em;font-weight:700;color:#15803d;font-size:1.05em">✅ Dlaczego Playwright wygrywa</p>
+      <ul style="margin:0;padding-left:1.2em;line-height:1.9">
+        <li><strong>Jeden framework</strong> do E2E i visual testów — mniej narzędzi w projekcie</li>
+        <li><strong>HTML report</strong> z diff side-by-side — czytelny dla całego teamu (dev, QA, designer)</li>
+        <li><strong>Pełna kontrola</strong> nad stanem przed screenshotem: hover, scroll, animacje</li>
+        <li><strong>Multi-browser</strong>: Chrome, Firefox, Safari — wykrywa różnice między przeglądarkami</li>
+        <li><strong>Aktywny development</strong> — Microsoft, duża społeczność, dobra dokumentacja</li>
+        <li><strong>Docker image</strong> (<code>mcr.microsoft.com/playwright</code>) → identyczne wyniki na CI i lokalnie</li>
+      </ul>
+    </div>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:.8em 1em">
+      <p style="margin:0 0 .5em;font-weight:700;color:#6b7280;font-size:1.05em">⚠️ Kiedy rozważyć Storycap?</p>
+      <ul style="margin:0;padding-left:1.2em;line-height:1.9">
+        <li>Masz <strong>setki stories</strong> i chcesz pokrycie bez pisania testów dla każdej</li>
+        <li>Potrzebujesz <strong>szybkiego smoke-testu całego Storybooka</strong> po deployu</li>
+        <li>Team zna tylko Jest i nie ma zasobów na Playwright</li>
+      </ul>
+      <p style="margin:.7em 0 .4em;font-weight:700;color:#dc2626;font-size:1em">❌ Ryzyka Storycap</p>
+      <ul style="margin:0;padding-left:1.2em;line-height:1.9">
+        <li>Peer deps konflikt ze Storybook 10 (<code>--legacy-peer-deps</code>)</li>
+        <li>Brak HTML raportu — tylko PNG pliki</li>
+        <li>Trudne testy stanów interaktywnych</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 14b – PLAN WDROŻENIA
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Plan wdrożenia — 3 etapy</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8em;font-size:.68em;margin-top:.7em">
+    <div style="background:#eff6ff;border:2px solid #93c5fd;border-radius:12px;padding:.8em 1em">
+      <p style="margin:0 0 .3em;font-weight:700;color:#1d4ed8;font-size:1.05em">Etap 1 — Fundament</p>
+      <p style="margin:0 0 .5em;color:#6b7280;font-size:.9em">Tydzień 1–2</p>
+      <ul style="margin:0;padding-left:1.1em;line-height:1.8">
+        <li>Dodać <code>@playwright/test</code> do projektu</li>
+        <li>Skonfigurować <code>playwright.config.ts</code> z <code>webServer</code></li>
+        <li>Napisać testy dla <strong>5 kluczowych komponentów</strong></li>
+        <li>Zacommitować baseline PNG</li>
+        <li>Uruchomić lokalnie na całym teamie</li>
+      </ul>
+    </div>
+    <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:.8em 1em">
+      <p style="margin:0 0 .3em;font-weight:700;color:#15803d;font-size:1.05em">Etap 2 — CI/CD</p>
+      <p style="margin:0 0 .5em;color:#6b7280;font-size:.9em">Tydzień 3–4</p>
+      <ul style="margin:0;padding-left:1.1em;line-height:1.8">
+        <li>Dodać step w GitHub Actions / GitLab CI</li>
+        <li>Uruchamiać testy w <strong>Docker</strong> dla spójności</li>
+        <li>Uploadować raport HTML jako artefakt CI</li>
+        <li>Blokować merge gdy testy FAILują</li>
+        <li>Zdefiniować proces aktualizacji baseline w PR</li>
+      </ul>
+    </div>
+    <div style="background:#faf5ff;border:2px solid #c4b5fd;border-radius:12px;padding:.8em 1em">
+      <p style="margin:0 0 .3em;font-weight:700;color:#6d28d9;font-size:1.05em">Etap 3 — Skalowanie</p>
+      <p style="margin:0 0 .5em;color:#6b7280;font-size:.9em">Miesiąc 2+</p>
+      <ul style="margin:0;padding-left:1.1em;line-height:1.8">
+        <li>Pokryć wszystkie komponenty design systemu</li>
+        <li>Dodać testy responsywności (mobile/tablet/desktop)</li>
+        <li>Testy dark mode / motywy</li>
+        <li>Rozważyć <strong>Chromatic</strong> (cloud) dla PR review przez designerów</li>
+        <li>Integracja z design tokenami</li>
+      </ul>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7em;font-size:.65em;margin-top:.7em">
+    <div style="background:#fff7ed;border-left:4px solid #f59e0b;border-radius:6px;padding:.5em .9em">
+      <strong>Koszt wdrożenia:</strong> ~2–3 dni dla Etapu 1 (setup + pierwsze 5 komponentów)
+    </div>
+    <div style="background:#f0fdf4;border-left:4px solid #22c55e;border-radius:6px;padding:.5em .9em">
+      <strong>Zysk:</strong> każda niezamierzona zmiana wizualna wykryta automatycznie w ciągu minut
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 15 – NEXT STEPS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Kolejne kroki</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1em;font-size:.72em;margin-top:.8em">
+    <div>
+      <p style="font-weight:700;color:var(--c-brand);margin-bottom:.5em">Krótkoterminowe</p>
+      <div class="timeline">
+        <div class="tl-item">Wdrożyć Playwright na istniejącym projekcie</div>
+        <div class="tl-item">Dodać testy wizualne do pipelines CI (GitHub Actions / GitLab CI)</div>
+        <div class="tl-item">Commitować baseline PNG do repozytorium</div>
+        <div class="tl-item">Zdefiniować konwencję nazewnictwa stories dla czytelnych ID</div>
+      </div>
+    </div>
+    <div>
+      <p style="font-weight:700;color:var(--c-brand);margin-bottom:.5em">Długoterminowe</p>
+      <div class="timeline">
+        <div class="tl-item">Rozważyć <strong>Percy / Chromatic</strong> — cloud visual testing z automatycznym review w PR</div>
+        <div class="tl-item">Docker dla spójności screenshotów między OS (font rendering)</div>
+        <div class="tl-item">Testy responsywności — wiele viewportów (mobile, tablet, desktop)</div>
+        <div class="tl-item">Integracja z design tokenami — alert gdy token zmienia wartość</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 16 – PYTANIA
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2 style="margin-bottom:.5em">Dziękuję</h2>
+  <p style="font-size:.8em;color:#6b7280;margin-bottom:1.5em">Repozytorium POC zawiera działający kod dla obu podejść</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1em;font-size:.7em">
+    <div style="background:#f5f3ff;border-radius:10px;padding:1em">
+      <p style="margin:0 0 .5em;font-weight:700;color:var(--c-brand)">Uruchomienie lokalne</p>
+      <pre style="font-size:.9em;margin:0"><code class="language-bash"># Storybook
+npm run storybook
+
+# Playwright (baseline)
+npm run test:visual:playwright:update
+
+# Playwright (regresje)
+npm run test:visual:playwright
+
+# Raport
+npx playwright show-report</code></pre>
+    </div>
+    <div style="background:#f0fdf4;border-radius:10px;padding:1em">
+      <p style="margin:0 0 .5em;font-weight:700;color:#15803d">Struktura projektu</p>
+      <pre style="font-size:.9em;margin:0"><code class="language-text">src/app/components/
+  button/   ← komponent + story
+  input/    ← komponent + story
+  card/     ← komponent + story
+e2e/visual/
+  button.visual.spec.ts
+  input.visual.spec.ts
+  card.visual.spec.ts
+__snapshots__/
+  *.png     ← baseline screenshots</code></pre>
+    </div>
+  </div>
+  <p style="font-size:1.2em;margin-top:1.2em">❓ Pytania?</p>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    transition: 'slide',
+    transitionSpeed: 'fast',
+    controls: true,
+    progress: true,
+    center: false,
+    width: 1200,
+    height: 700,
+    margin: 0.04,
+    minScale: 0.2,
+    maxScale: 2.0,
+    plugins: [ RevealHighlight, RevealNotes ],
+    highlight: {
+      highlightOnLoad: true,
+    },
+  });
+</script>
+</body>
+</html>
