@@ -1,59 +1,184 @@
-# VisualTestingPoc
+# Visual Testing POC
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.13.
+Proof of concept porównujący dwa podejścia do **automatycznych testów regresji wizualnej** komponentów Angular w środowisku Storybook.
 
-## Development server
+**Stack:** Angular 21 · Storybook 10 · Storycap + jest-image-snapshot · Playwright
 
-To start a local development server, run:
+---
 
-```bash
-ng serve
+## Na czym polega problem?
+
+Każda zmiana CSS, upgrade zależności czy refaktor szablonu może niezauważalnie zmienić wygląd komponentu. Code review tego nie wychwytuje — testy jednostkowe sprawdzają *zachowanie*, nie *piksel*.
+
+Testy wizualne robią screenshot każdej story i porównują go z zapisanym baseline. Jeśli cokolwiek się zmieniło — test pada i dostajesz diff image.
+
+---
+
+## Podejścia
+
+### Podejście 1 — Storycap + jest-image-snapshot
+
+```
+Storycap (Puppeteer) → __screenshots__/ → Jest → porównanie z __screenshots_baseline__/
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Storycap uruchamia Storybook, robi screenshot każdej story i zapisuje PNG. Jest + jest-image-snapshot porównuje je piksel po pikselu z baselinami. Tolerancja: 2% zmienionych pikseli.
 
-## Code scaffolding
+### Podejście 2 — Playwright Visual Testing
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
-
-```bash
-ng generate component component-name
+```
+Playwright → iframe Storybooka → toHaveScreenshot() → porównanie z __snapshots__/
 ```
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+Playwright nawiguje bezpośrednio do iframe URL każdej story i używa wbudowanego `toHaveScreenshot()`. Storybook startuje automatycznie przez `webServer` w konfiguracji Playwrighta.
+
+---
+
+## Komponenty testowe
+
+| Komponent | Stories | Testowane stany |
+|-----------|---------|-----------------|
+| `ButtonComponent` | 8 | primary, secondary, disabled; rozmiary sm/md/lg |
+| `InputComponent` | 5 | default, focused, error, disabled, z wartością |
+| `CardComponent` | 5 | simple, with subtitle, with footer, content only |
+
+---
+
+## Instalacja
 
 ```bash
-ng generate --help
+npm install
 ```
 
-## Building
-
-To build the project run:
+Playwright wymaga przeglądarek:
 
 ```bash
-ng build
+npx playwright install chromium
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+---
 
-## Running unit tests
+## Uruchamianie testów
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+### Storycap
 
 ```bash
-ng test
+# Pierwsze uruchomienie — tworzy baseline (zawsze przechodzi)
+npm run test:visual:storycap
+
+# Kolejne uruchomienia — wykrywa regresje
+npm run test:visual:storycap
+
+# Po celowej zmianie UI — aktualizuje baseline
+npm run test:visual:storycap:update
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
+### Playwright
 
 ```bash
-ng e2e
+# Pierwsze uruchomienie — tworzy baseline
+npm run test:visual:playwright:update
+
+# Kolejne uruchomienia — wykrywa regresje
+npm run test:visual:playwright
+
+# Po celowej zmianie UI — aktualizuje baseline
+npm run test:visual:playwright:update
+
+# Raport HTML z diffami
+npx playwright show-report
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+### Storybook (lokalnie)
 
-## Additional Resources
+```bash
+npm run storybook
+# http://localhost:6006
+```
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+---
+
+## Struktura projektu
+
+```
+├── src/app/components/
+│   ├── button/          # ButtonComponent + stories
+│   ├── input/           # InputComponent + stories
+│   └── card/            # CardComponent + stories
+│
+├── e2e/visual/          # Testy Playwright
+│   ├── button.visual.spec.ts
+│   ├── input.visual.spec.ts
+│   └── card.visual.spec.ts
+│
+├── visual-tests/
+│   └── storycap.test.ts # Testy Jest porównujące screenshoty Storycapa
+│
+├── __snapshots__/       # Baseline PNG — Playwright (commitowane do repo)
+├── __screenshots__/     # Screenshoty robione przez Storycap (ignorowane przez git)
+├── __screenshots_baseline__/  # Baseline PNG — Storycap (tworzone lokalnie)
+│
+├── playwright.config.ts
+├── jest.storycap.config.js
+└── presentation.html    # Prezentacja reveal.js z wynikami spike'a
+```
+
+---
+
+## Porównanie podejść
+
+| | Storycap + Jest | Playwright |
+|---|---|---|
+| Silnik screenshotów | Puppeteer (Chromium) | Playwright Chromium |
+| Integracja ze Storybookiem | storycap CLI | webServer + iframe URL |
+| Przechowywanie baseline | `__screenshots_baseline__/` | `__snapshots__/` |
+| Diff output | `__screenshots_diff__/` | `playwright-report/` |
+| Tolerancja | `failureThreshold` w teście | `maxDiffPixelRatio` w konfiguracji |
+| Wiele przeglądarek | tylko Chromium | Chromium, Firefox, Safari |
+| CI readiness | dobry | doskonały (wbudowany tryb CI) |
+| Raport HTML | brak | `npx playwright show-report` |
+
+---
+
+## URL stories (Playwright)
+
+Story otwierane są przez iframe embed:
+
+```
+http://localhost:6006/iframe.html?id=<story-id>&viewMode=story
+```
+
+ID story: `<title-kebab>--<story-name-kebab>`, np.:
+
+| Komponent | Story | ID |
+|-----------|-------|----|
+| Button | Primary | `components-button--primary` |
+| Input | Error | `components-input--error` |
+| Card | With Footer | `components-card--with-footer` |
+
+---
+
+## CI / Docker
+
+Playwright snapshoty mogą różnić się między systemami operacyjnymi (renderowanie fontów). Żeby uniknąć fałszywych failów na CI, można uruchamiać testy w oficjalnym obrazie Playwright:
+
+```bash
+docker run --rm -it \
+  -v "$(pwd)":/work -w /work \
+  mcr.microsoft.com/playwright:v1.60.0-jammy \
+  npx playwright test
+```
+
+---
+
+## Resetowanie baseline
+
+```bash
+# Playwright
+rm -rf __snapshots__
+npm run test:visual:playwright:update
+
+# Storycap
+rm -rf __screenshots_baseline__ __screenshots_diff__
+npm run test:visual:storycap
+```
