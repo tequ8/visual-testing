@@ -23,6 +23,15 @@ async function gotoStory(page: Page, storyId: string): Promise<void> {
   await page.waitForTimeout(300);
 }
 
+/** Navigate to a story iframe, hover the button, then take a screenshot. */
+async function gotoStoryHover(page: Page, storyId: string): Promise<void> {
+  await page.goto(`/iframe.html?id=${storyId}&viewMode=story`);
+  await page.waitForLoadState('domcontentloaded');
+  await page.waitForSelector('app-button', { state: 'visible', timeout: 15000 });
+  await page.waitForTimeout(300);
+  await page.locator('app-button button').hover();
+}
+
 test.describe('Button – visual regression', () => {
   test.use({ viewport: { width: 400, height: 200 } });
 
@@ -64,5 +73,15 @@ test.describe('Button – visual regression', () => {
   test('Large Secondary button', async ({ page }) => {
     await gotoStory(page, 'components-button--large-secondary');
     await expect(page).toHaveScreenshot('button-large-secondary.png');
+  });
+
+  test('Primary button – hover', async ({ page }) => {
+    await gotoStoryHover(page, 'components-button--primary');
+    await expect(page).toHaveScreenshot('button-primary-hover.png');
+  });
+
+  test('Secondary button – hover', async ({ page }) => {
+    await gotoStoryHover(page, 'components-button--secondary');
+    await expect(page).toHaveScreenshot('button-secondary-hover.png');
   });
 });

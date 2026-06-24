@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/angular';
+import { userEvent, within } from 'storybook/test';
 import { ButtonComponent } from './button.component';
 
 const meta: Meta<ButtonComponent> = {
@@ -96,5 +97,31 @@ export const LargeSecondary: Story = {
     variant: 'secondary',
     size: 'lg',
     disabled: false,
+  },
+};
+
+export const PrimaryHover: Story = {
+  name: 'Primary Hover',
+  args: {
+    variant: 'primary',
+    size: 'md',
+    disabled: false,
+  },
+  play: async ({ canvasElement }) => {
+    const button = within(canvasElement).getByRole('button');
+    await userEvent.hover(button);
+  },
+};
+
+export const SecondaryHover: Story = {
+  name: 'Secondary Hover',
+  args: {
+    variant: 'secondary',
+    size: 'md',
+    disabled: false,
+  },
+  play: async ({ canvasElement }) => {
+    const button = within(canvasElement).getByRole('button');
+    await userEvent.hover(button);
   },
 };

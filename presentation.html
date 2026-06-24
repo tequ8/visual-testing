@@ -231,6 +231,7 @@
     <span class="pill pill-blue">Storybook 10</span>
     <span class="pill pill-gray">Storycap + Jest</span>
     <span class="pill pill-blue">Playwright</span>
+    <span class="pill pill-green">Chromatic</span>
   </div>
 </section>
 
@@ -281,7 +282,7 @@
   <p style="font-size:.72em;text-align:center;color:#6b7280;margin-bottom:1em">
     Każda story = izolowany przypadek testowy dla konkretnego stanu komponentu
   </p>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1em;font-size:.72em">
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8em;font-size:.72em">
     <div style="background:#f5f3ff;border-radius:10px;padding:.8em 1em;border:2px solid #c4b5fd">
       <strong style="color:#6d28d9">Podejście 1</strong><br>
       <span>Storycap + jest-image-snapshot + Jest</span><br>
@@ -291,6 +292,11 @@
       <strong style="color:#1d4ed8">Podejście 2</strong><br>
       <span>Playwright Visual Testing</span><br>
       <span class="text-muted">Playwright otwiera story, robi screenshot, porównuje</span>
+    </div>
+    <div style="background:#dcfce7;border-radius:10px;padding:.8em 1em;border:2px solid #86efac">
+      <strong style="color:#15803d">Podejście 3</strong><br>
+      <span>Chromatic — cloud visual testing</span><br>
+      <span class="text-muted">Build → upload do chmury → UI review w przeglądarce</span>
     </div>
   </div>
 </section>
@@ -586,6 +592,279 @@ npx playwright show-report</code></pre>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10b – PODEJŚCIE 3: CHROMATIC (overview)
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 3 — Chromatic</h2>
+  <div class="flow" style="margin:.8em 0">
+    <div class="flow-box" style="background:#dcfce7;border-color:#16a34a">Build<br>Storybook</div>
+    <div class="flow-arrow" style="color:#16a34a">→</div>
+    <div class="flow-box" style="background:#dcfce7;border-color:#16a34a">Upload<br>do chmury</div>
+    <div class="flow-arrow" style="color:#16a34a">→</div>
+    <div class="flow-box" style="background:#dcfce7;border-color:#16a34a">Chromatic<br>renderuje</div>
+    <div class="flow-arrow" style="color:#16a34a">→</div>
+    <div class="flow-box" style="background:#dcfce7;border-color:#16a34a">Porównanie<br>z poprzednim</div>
+    <div class="flow-arrow" style="color:#16a34a">→</div>
+    <div class="flow-box" style="background:#dcfce7;border-color:#16a34a">UI Review<br>w przeglądarce</div>
+  </div>
+  <div class="timeline">
+    <div class="tl-item"><strong>1.</strong> <code>npx chromatic --project-token=...</code> — jedna komenda, zero konfiguracji</div>
+    <div class="tl-item"><strong>2.</strong> Chromatic buduje Storybook lokalnie (<code>build-storybook</code>) i wysyła do chmury</div>
+    <div class="tl-item"><strong>3.</strong> Chmura renderuje każdą story w izolowanej przeglądarce i robi screenshot</div>
+    <div class="tl-item"><strong>4.</strong> Automatyczne porównanie z poprzednim zaakceptowanym buildem</div>
+    <div class="tl-item"><strong>5.</strong> Reviewer zatwierdza lub odrzuca zmiany wizualnie w UI — jak code review, ale dla wyglądu</div>
+  </div>
+  <div style="background:#f0fdf4;border-left:4px solid #16a34a;border-radius:6px;padding:.5em 1em;font-size:.65em;margin-top:.6em">
+    <strong>Wynik POC:</strong> 1 komenda → build 42s → upload 30s → <strong>28 stories, 6 komponentów</strong> — build 1 auto-accepted ✅<br>
+    Panel projektu: <code>chromatic.com</code> · Storybook online: <code>6a318ba59e122c733a60177a-mkrmxjxjup.chromatic.com</code>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10c – PODEJŚCIE 3: KOD / WORKFLOW
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 3 — Chromatic w praktyce</h2>
+  <div class="two-col">
+    <div>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin-bottom:.3em">Instalacja i uruchomienie</p>
+      <pre><code class="language-bash"># Instalacja
+npm install --save-dev chromatic
+
+# Pierwsze uruchomienie (tworzy baseline)
+npx chromatic --project-token=chpt_xxx
+
+# Z package.json (token z env)
+npm run test:visual:chromatic</code></pre>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin:.7em 0 .3em">package.json</p>
+      <pre><code class="language-json">"scripts": {
+  "test:visual:chromatic":
+    "chromatic --project-token=$CHROMATIC_PROJECT_TOKEN"
+}</code></pre>
+      <p style="font-size:.63em;color:#6b7280;margin-top:.5em">
+        💡 Zero dodatkowej konfiguracji — Chromatic automatycznie wykrywa wszystkie stories ze Storybooka
+      </p>
+    </div>
+    <div>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin-bottom:.3em">GitHub Actions CI</p>
+      <pre style="font-size:.48em"><code class="language-yaml"># .github/workflows/chromatic.yml
+name: Chromatic
+on: [push]
+jobs:
+  chromatic:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # potrzebne do TurboSnap
+      - run: npm ci
+      - name: Run Chromatic
+        uses: chromaui/action@latest
+        with:
+          projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
+          exitZeroOnChanges: true  # nie blokuj CI, czekaj na review</code></pre>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin:.6em 0 .3em">Przepływ PR z Chromatic</p>
+      <div class="flow" style="margin:.3em 0;flex-wrap:wrap">
+        <div class="flow-box" style="background:#dcfce7;border-color:#16a34a;font-size:.6em">Push<br>do PR</div>
+        <div class="flow-arrow" style="color:#16a34a;font-size:.8em">→</div>
+        <div class="flow-box" style="background:#dcfce7;border-color:#16a34a;font-size:.6em">CI uruchamia<br>Chromatic</div>
+        <div class="flow-arrow" style="color:#16a34a;font-size:.8em">→</div>
+        <div class="flow-box" style="background:#fef3c7;border-color:#d97706;font-size:.6em">Check:<br>"UI Review"</div>
+        <div class="flow-arrow" style="color:#d97706;font-size:.8em">→</div>
+        <div class="flow-box" style="background:#dcfce7;border-color:#16a34a;font-size:.6em">Reviewer<br>zatwierdza</div>
+        <div class="flow-arrow" style="color:#16a34a;font-size:.8em">→</div>
+        <div class="flow-box" style="background:#dcfce7;border-color:#16a34a;font-size:.6em">Merge<br>✅</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10d – PODEJŚCIE 3: PROS/CONS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 3 — zalety i wady</h2>
+  <div class="pros-cons" style="margin-top:.8em">
+    <div class="box-pro">
+      <h4>✅ Zalety</h4>
+      <ul>
+        <li><strong>UI Review</strong> — reviewer zatwierdza zmiany wizualne w przeglądarce, jak code review ale dla wyglądu</li>
+        <li><strong>Zero konfiguracji</strong> — automatycznie wykrywa wszystkie stories, bez pisania testów</li>
+        <li><strong>Historia buildów</strong> — pełna historia snapshotów per branch i commit</li>
+        <li><strong>Natywna integracja z GitHub/GitLab</strong> — PR check "UI Tests" blokuje merge do zatwierdzenia</li>
+        <li><strong>TurboSnap</strong> — testuje tylko komponenty których pliki zmieniły się w PR (szybciej)</li>
+        <li><strong>Renderowanie w chmurze</strong> — spójne wyniki niezależnie od OS dewelopera</li>
+        <li>Snapshoty trzymane w chmurze — nie zaśmiecają repozytorium</li>
+      </ul>
+    </div>
+    <div class="box-con">
+      <h4>⚠️ Wady</h4>
+      <ul>
+        <li><strong>Płatne</strong> powyżej 5000 snapshotów/miesiąc — przy dużym teamie i wielu PR może być kosztowne</li>
+        <li>Screenshoty i kod komponentów trafiają do zewnętrznego serwera (kwestia polityki bezpieczeństwa)</li>
+        <li>Wymaga dostępu do internetu — nie działa w pełni offline/air-gapped</li>
+        <li>Mniejsza kontrola nad środowiskiem renderowania vs lokalne narzędzia</li>
+        <li>Konto i token wymagane do startu — próg wejścia wyższy niż Playwright</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10e – CHROMATIC UI REVIEW (mockup)
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 3 — jak wygląda UI Review?</h2>
+  <p style="font-size:.65em;color:#6b7280;margin:.2em 0 .6em">Reviewer widzi każdą zmianę wizualną w przeglądarce — jak diff w code review, ale dla pikseli</p>
+
+  <!-- Mockup: Chromatic browser UI -->
+  <div style="background:#1c1f26;border-radius:10px;padding:.5em .8em .8em;font-size:.62em">
+
+    <!-- Top bar -->
+    <div style="display:flex;align-items:center;gap:.6em;padding:.3em 0 .5em;border-bottom:1px solid #2d3139">
+      <div style="display:flex;gap:.3em">
+        <div style="width:10px;height:10px;border-radius:50%;background:#ff5f56"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:#ffbd2e"></div>
+        <div style="width:10px;height:10px;border-radius:50%;background:#27c93f"></div>
+      </div>
+      <div style="background:#2d3139;border-radius:4px;padding:.15em .8em;color:#8b9099;font-size:.95em;flex:1;text-align:center">chromatic.com / your-project / build / 2</div>
+    </div>
+
+    <!-- Build header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:.5em 0 .4em">
+      <div>
+        <span style="color:#fff;font-weight:700">Build 2</span>
+        <span style="color:#8b9099;margin-left:.5em">main · commit a3f9c12 · "zmiana koloru buttona"</span>
+      </div>
+      <div style="display:flex;gap:.5em">
+        <span style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b55;border-radius:4px;padding:.1em .5em;font-weight:600">2 Changes</span>
+        <span style="background:#22c55e22;color:#22c55e;border:1px solid #22c55e55;border-radius:4px;padding:.1em .5em">26 Unchanged</span>
+      </div>
+    </div>
+
+    <!-- Story list + diff view -->
+    <div style="display:grid;grid-template-columns:220px 1fr;gap:.5em">
+
+      <!-- Story list -->
+      <div style="background:#14161c;border-radius:6px;padding:.4em">
+        <p style="color:#8b9099;margin:0 0 .3em;font-size:.85em;padding:.1em .4em">COMPONENTS</p>
+        <div style="background:#2563eb22;border-left:2px solid #2563eb;border-radius:3px;padding:.25em .5em;color:#fff;margin-bottom:.2em">
+          <span style="color:#f59e0b;margin-right:.3em">●</span>Button / Primary
+        </div>
+        <div style="background:#2563eb22;border-left:2px solid #2563eb;border-radius:3px;padding:.25em .5em;color:#fff;margin-bottom:.2em">
+          <span style="color:#f59e0b;margin-right:.3em">●</span>Button / Large Primary
+        </div>
+        <div style="padding:.25em .5em;color:#8b9099;margin-bottom:.2em">
+          <span style="color:#22c55e;margin-right:.3em">✓</span>Button / Secondary
+        </div>
+        <div style="padding:.25em .5em;color:#8b9099;margin-bottom:.2em">
+          <span style="color:#22c55e;margin-right:.3em">✓</span>Button / Disabled
+        </div>
+        <div style="padding:.25em .5em;color:#8b9099;margin-bottom:.2em">
+          <span style="color:#22c55e;margin-right:.3em">✓</span>Input / Default
+        </div>
+        <div style="padding:.25em .5em;color:#8b9099">
+          <span style="color:#22c55e;margin-right:.3em">✓</span>Card / Simple
+        </div>
+      </div>
+
+      <!-- Diff view -->
+      <div style="background:#14161c;border-radius:6px;padding:.4em">
+        <div style="display:flex;gap:.3em;margin-bottom:.4em">
+          <span style="background:#2d3139;color:#8b9099;border-radius:3px;padding:.1em .5em">Baseline</span>
+          <span style="background:#2d3139;color:#8b9099;border-radius:3px;padding:.1em .5em">Latest</span>
+          <span style="background:#4f46e522;color:#a5b4fc;border-radius:3px;padding:.1em .5em;border:1px solid #4f46e555">Diff</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4em;text-align:center">
+          <div>
+            <p style="color:#8b9099;margin:0 0 .2em;font-size:.85em">Baseline</p>
+            <div style="background:#4f46e5;border-radius:4px;padding:.5em 1em;color:#fff;font-weight:600;font-size:.9em;display:inline-block">Click me</div>
+          </div>
+          <div>
+            <p style="color:#8b9099;margin:0 0 .2em;font-size:.85em">Latest</p>
+            <div style="background:#dc2626;border-radius:20px;padding:.5em 1em;color:#fff;font-weight:600;font-size:.9em;display:inline-block">Click me</div>
+          </div>
+          <div>
+            <p style="color:#8b9099;margin:0 0 .2em;font-size:.85em">Diff</p>
+            <div style="background:#1a1a1a;border:1px solid #333;border-radius:4px;padding:.5em 1em;font-size:.9em;display:inline-block;position:relative">
+              <span style="background:#ff006688;color:#fff;border-radius:3px;padding:.1em .6em;font-weight:600">Click me</span>
+            </div>
+          </div>
+        </div>
+        <!-- Action buttons -->
+        <div style="display:flex;justify-content:flex-end;gap:.5em;margin-top:.5em;padding-top:.4em;border-top:1px solid #2d3139">
+          <button style="background:transparent;border:1px solid #4b5563;color:#9ca3af;border-radius:4px;padding:.2em .8em;cursor:pointer;font-size:.85em">Deny ✕</button>
+          <button style="background:#2563eb;border:none;color:#fff;border-radius:4px;padding:.2em .8em;cursor:pointer;font-size:.85em;font-weight:600">Accept ✓</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6em;font-size:.62em;margin-top:.6em">
+    <div style="background:#f9fafb;border-radius:6px;padding:.4em .7em">
+      <strong style="color:#f59e0b">● Changed</strong> — zmiana wykryta, czeka na review
+    </div>
+    <div style="background:#f9fafb;border-radius:6px;padding:.4em .7em">
+      <strong style="color:#22c55e">✓ Unchanged</strong> — identyczne z baselineˈem
+    </div>
+    <div style="background:#f9fafb;border-radius:6px;padding:.4em .7em">
+      <strong style="color:#2563eb">Accept</strong> — zatwierdza nowy wygląd jako baseline
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10f – CHROMATIC SELF-HOSTED
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Chromatic — czy można hostować we własnej infrastrukturze?</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8em;font-size:.68em;margin-top:.7em">
+
+    <div style="background:#fff7ed;border:2px solid #f59e0b;border-radius:12px;padding:.8em 1em">
+      <p style="margin:0 0 .5em;font-weight:700;color:#b45309;font-size:1.05em">☁️ Chromatic Cloud (domyślny)</p>
+      <ul style="margin:0;padding-left:1.1em;line-height:1.9">
+        <li>Kod i snapshoty trafiają na serwery Chromatic</li>
+        <li>Wymaga dostępu do internetu</li>
+        <li>Free do 5 000 snap/mies. · płatne powyżej</li>
+        <li>Gotowe natychmiast — zero DevOps</li>
+      </ul>
+    </div>
+
+    <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:.8em 1em">
+      <p style="margin:0 0 .5em;font-weight:700;color:#15803d;font-size:1.05em">🏢 Chromatic On-Premises (Enterprise)</p>
+      <ul style="margin:0;padding-left:1.1em;line-height:1.9">
+        <li>Pełne Chromatic na <strong>własnych serwerach</strong></li>
+        <li>Kod i snapshoty <strong>nie opuszczają infrastruktury</strong></li>
+        <li>Działa w środowiskach air-gapped (bez internetu)</li>
+        <li>Wymaga kontaktu z Chromatic i planu Enterprise</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <p style="font-size:.72em;font-weight:700;color:#374151;margin:.8em 0 .4em">Alternatywy open-source (w pełni self-hosted)</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6em;font-size:.64em">
+    <div style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px;padding:.6em .8em">
+      <p style="margin:0 0 .3em;font-weight:700;color:#6d28d9">Lost Pixel</p>
+      <p style="margin:0;color:#6b7280">Open-source, działa lokalnie lub na własnym CI. Podobny przepływ do Chromatic. GitHub: lost-pixel/lost-pixel</p>
+    </div>
+    <div style="background:#dbeafe;border:1px solid #93c5fd;border-radius:8px;padding:.6em .8em">
+      <p style="margin:0 0 .3em;font-weight:700;color:#1d4ed8">reg-suit + storycap</p>
+      <p style="margin:0;color:#6b7280">Storycap capture → reg-suit porównuje → raport HTML na własnym S3/GCS. Pełna kontrola, wymaga konfiguracji.</p>
+    </div>
+    <div style="background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:.6em .8em">
+      <p style="margin:0 0 .3em;font-weight:700;color:#15803d">Playwright (już mamy)</p>
+      <p style="margin:0;color:#6b7280">Baseline w repo, raport HTML jako artefakt CI. W pełni lokalne, zero zewnętrznych serwisów.</p>
+    </div>
+  </div>
+
+  <div style="background:#1e1b4b;border-radius:8px;padding:.6em 1em;font-size:.66em;margin-top:.6em;color:#c7d2fe">
+    <strong style="color:#a5b4fc">Rekomendacja dla organizacji z restrykcyjną polityką bezpieczeństwa:</strong>
+    Playwright (lokalnie) + Lost Pixel lub reg-suit (CI) — zero zależności od chmury zewnętrznej
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
      SLAJD 11 – TABELA PORÓWNAWCZA
 ════════════════════════════════════════════════════════════ -->
 <section>
@@ -596,53 +875,69 @@ npx playwright show-report</code></pre>
         <th>Kryterium</th>
         <th>🟣 Storycap + Jest</th>
         <th>🔵 Playwright</th>
+        <th>🟢 Chromatic</th>
       </tr>
     </thead>
     <tbody>
       <tr>
         <td>Auto-discovery stories</td>
-        <td class="winner">✅ Tak — wszystkie automatycznie</td>
-        <td>❌ Ręcznie dla każdej story</td>
+        <td class="winner">✅ Wszystkie auto</td>
+        <td>❌ Ręcznie</td>
+        <td class="winner">✅ Wszystkie auto</td>
       </tr>
       <tr>
-        <td>Interaktywny diff report</td>
+        <td>Diff / Review UI</td>
         <td>❌ Tylko pliki PNG</td>
-        <td class="winner">✅ HTML z side-by-side diffem</td>
+        <td>⚠️ HTML lokalny</td>
+        <td class="winner">✅ UI w chmurze, team review</td>
       </tr>
       <tr>
         <td>Multi-browser</td>
         <td>Chromium only</td>
         <td class="winner">Chrome, Firefox, Safari</td>
+        <td>Chrome + inne (płatne)</td>
       </tr>
       <tr>
-        <td>Testy interakcji (hover/focus)</td>
-        <td>⚠️ Ograniczone</td>
-        <td class="winner">✅ Pełne wsparcie</td>
+        <td>Testy interakcji (play fn)</td>
+        <td>❌ Brak</td>
+        <td class="winner">✅ Pełne</td>
+        <td class="winner">✅ (play functions)</td>
       </tr>
       <tr>
-        <td>Zgodność ze Storybook 10</td>
-        <td>⚠️ legacy-peer-deps</td>
-        <td class="winner">✅ Niezależny od wersji</td>
+        <td>Integracja z PR (GitHub)</td>
+        <td>⚠️ Artefakt CI</td>
+        <td>⚠️ Artefakt CI</td>
+        <td class="winner">✅ Natywny PR check</td>
+      </tr>
+      <tr>
+        <td>Gdzie trzyma snapshoty</td>
+        <td>Git (repo)</td>
+        <td>Git (repo)</td>
+        <td class="winner">Chmura (nie w repo)</td>
       </tr>
       <tr>
         <td>CI/CD gotowość</td>
         <td>Dobra</td>
-        <td class="winner">Doskonała (Docker image)</td>
+        <td>Doskonała (Docker)</td>
+        <td class="winner">Natywna (GitHub Action)</td>
       </tr>
       <tr>
         <td>Krzywa uczenia</td>
-        <td class="winner">Niska (Jest znany)</td>
+        <td class="winner">Niska (Jest)</td>
         <td>Umiarkowana</td>
+        <td class="winner">Niska (1 komenda)</td>
       </tr>
       <tr>
-        <td>Konfiguracja tolerancji</td>
-        <td>failureThreshold (%) </td>
-        <td>maxDiffPixelRatio + threshold</td>
+        <td>Koszt</td>
+        <td class="winner">Free</td>
+        <td class="winner">Free</td>
+        <td>Free do 5k snap/mies.</td>
       </tr>
       <tr>
         <td>Czas dodania nowej story</td>
         <td class="winner">Zero (auto)</td>
-        <td>~5 min (nowy test)</td>
+        <td>~5 min</td>
+        <td class="winner">Zero (auto)</td>
       </tr>
     </tbody>
   </table>
@@ -906,30 +1201,40 @@ npx playwright show-report</code></pre>
      SLAJD 13 – WYNIK POC
 ════════════════════════════════════════════════════════════ -->
 <section>
-  <h2>Wynik POC — Playwright</h2>
-  <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:1em;text-align:center;margin:.5em 0">
-    <p style="font-size:1.4em;font-weight:700;color:#15803d;margin:0">18 / 18 testów ✅</p>
-    <p style="font-size:.72em;color:#6b7280;margin:.3em 0 0">Czas wykonania: ~15.6s dla 3 komponentów × wszystkich stories</p>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7em;font-size:.68em;margin-top:.8em">
-    <div style="background:#f9fafb;border-radius:8px;padding:.7em;border:1px solid #e5e7eb">
-      <p style="margin:0 0 .3em;font-weight:700">Button</p>
-      <p style="margin:0;color:#15803d">8 stories ✅</p>
-      <p style="margin:.2em 0 0;color:#6b7280">Primary, Secondary, Disabled,<br>SM/MD/LG variants</p>
+  <h2>Wynik POC — wszystkie 3 podejścia</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7em;font-size:.68em;margin:.5em 0">
+    <div style="background:#f5f3ff;border:2px solid #c4b5fd;border-radius:10px;padding:.7em 1em;text-align:center">
+      <p style="margin:0 0 .2em;font-weight:700;color:#6d28d9">🟣 Storycap + Jest</p>
+      <p style="font-size:1.3em;font-weight:700;color:#15803d;margin:0">18 / 18 ✅</p>
+      <p style="color:#6b7280;margin:.2em 0 0">Button, Input, Card<br>baseline w <code>__screenshots_baseline__/</code></p>
     </div>
-    <div style="background:#f9fafb;border-radius:8px;padding:.7em;border:1px solid #e5e7eb">
-      <p style="margin:0 0 .3em;font-weight:700">Input</p>
-      <p style="margin:0;color:#15803d">5 stories ✅</p>
-      <p style="margin:.2em 0 0;color:#6b7280">Default, Focused, Error,<br>With Value, Disabled</p>
+    <div style="background:#dbeafe;border:2px solid #93c5fd;border-radius:10px;padding:.7em 1em;text-align:center">
+      <p style="margin:0 0 .2em;font-weight:700;color:#1d4ed8">🔵 Playwright</p>
+      <p style="font-size:1.3em;font-weight:700;color:#15803d;margin:0">18 / 18 ✅</p>
+      <p style="color:#6b7280;margin:.2em 0 0">~15.6s · HTML report<br>baseline w <code>__snapshots__/</code></p>
     </div>
-    <div style="background:#f9fafb;border-radius:8px;padding:.7em;border:1px solid #e5e7eb">
-      <p style="margin:0 0 .3em;font-weight:700">Card</p>
-      <p style="margin:0;color:#15803d">5 stories ✅</p>
-      <p style="margin:.2em 0 0;color:#6b7280">Simple, With Subtitle,<br>With Footer, Content Only</p>
+    <div style="background:#dcfce7;border:2px solid #86efac;border-radius:10px;padding:.7em 1em;text-align:center">
+      <p style="margin:0 0 .2em;font-weight:700;color:#15803d">🟢 Chromatic</p>
+      <p style="font-size:1.3em;font-weight:700;color:#15803d;margin:0">28 snapshots ✅</p>
+      <p style="color:#6b7280;margin:.2em 0 0">6 komponentów · 42s build<br>Build #1 auto-accepted</p>
     </div>
   </div>
-  <p style="font-size:.68em;color:#6b7280;margin-top:.7em;text-align:center">
-    Baseline screenshoty zapisane w <code>__snapshots__/</code> — gotowe do commitu do repozytorium
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7em;font-size:.65em;margin-top:.5em">
+    <div style="background:#f9fafb;border-radius:8px;padding:.6em;border:1px solid #e5e7eb">
+      <p style="margin:0 0 .2em;font-weight:700">Button — 8 stories</p>
+      <p style="margin:0;color:#6b7280">Primary, Secondary, Disabled, SM/MD/LG, Hover</p>
+    </div>
+    <div style="background:#f9fafb;border-radius:8px;padding:.6em;border:1px solid #e5e7eb">
+      <p style="margin:0 0 .2em;font-weight:700">Input — 5 stories</p>
+      <p style="margin:0;color:#6b7280">Default, Focused, Error, With Value, Disabled</p>
+    </div>
+    <div style="background:#f9fafb;border-radius:8px;padding:.6em;border:1px solid #e5e7eb">
+      <p style="margin:0 0 .2em;font-weight:700">Card — 5 stories</p>
+      <p style="margin:0;color:#6b7280">Simple, With Subtitle, With Footer, Content Only</p>
+    </div>
+  </div>
+  <p style="font-size:.65em;color:#6b7280;margin-top:.6em;text-align:center">
+    Chromatic wykrył również 10 dodatkowych stories z domyślnego scaffoldu Storybooka (Example/Button, Header, Page)
   </p>
 </section>
 
@@ -941,34 +1246,45 @@ npx playwright show-report</code></pre>
 
   <div style="background:#1e1b4b;border-radius:14px;padding:.8em 1.2em;margin:.5em 0 .7em;text-align:center">
     <p style="color:#a5b4fc;font-size:.65em;font-weight:700;letter-spacing:.1em;text-transform:uppercase;margin:0 0 .2em">Nasza rekomendacja</p>
-    <p style="color:#fff;font-size:.95em;font-weight:700;margin:0">Playwright jako primary visual testing framework</p>
+    <p style="color:#fff;font-size:.95em;font-weight:700;margin:0">Playwright lokalnie + Chromatic w CI dla team review</p>
     <p style="color:#c7d2fe;font-size:.65em;margin:.3em 0 0">Storycap opcjonalnie jako uzupełniający smoke-test na CI</p>
   </div>
 
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.7em;font-size:.67em">
-    <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:10px;padding:.8em 1em">
-      <p style="margin:0 0 .5em;font-weight:700;color:#15803d;font-size:1.05em">✅ Dlaczego Playwright wygrywa</p>
-      <ul style="margin:0;padding-left:1.2em;line-height:1.9">
-        <li><strong>Jeden framework</strong> do E2E i visual testów — mniej narzędzi w projekcie</li>
-        <li><strong>HTML report</strong> z diff side-by-side — czytelny dla całego teamu (dev, QA, designer)</li>
-        <li><strong>Pełna kontrola</strong> nad stanem przed screenshotem: hover, scroll, animacje</li>
-        <li><strong>Multi-browser</strong>: Chrome, Firefox, Safari — wykrywa różnice między przeglądarkami</li>
-        <li><strong>Aktywny development</strong> — Microsoft, duża społeczność, dobra dokumentacja</li>
-        <li><strong>Docker image</strong> (<code>mcr.microsoft.com/playwright</code>) → identyczne wyniki na CI i lokalnie</li>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6em;font-size:.64em">
+    <div style="background:#dbeafe;border:2px solid #93c5fd;border-radius:10px;padding:.7em .9em">
+      <p style="margin:0 0 .4em;font-weight:700;color:#1d4ed8;font-size:1.05em">🔵 Playwright — lokalnie</p>
+      <ul style="margin:0;padding-left:1.1em;line-height:1.8">
+        <li>Deweloper testuje lokalnie przed pushm</li>
+        <li>Pełna kontrola: hover, focus, animacje</li>
+        <li>HTML report z diff side-by-side</li>
+        <li>Multi-browser (Chrome, Firefox, Safari)</li>
+        <li>Docker image → spójne wyniki na CI</li>
+        <li>Jeden framework do E2E i visual</li>
       </ul>
     </div>
-    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:.8em 1em">
-      <p style="margin:0 0 .5em;font-weight:700;color:#6b7280;font-size:1.05em">⚠️ Kiedy rozważyć Storycap?</p>
-      <ul style="margin:0;padding-left:1.2em;line-height:1.9">
-        <li>Masz <strong>setki stories</strong> i chcesz pokrycie bez pisania testów dla każdej</li>
-        <li>Potrzebujesz <strong>szybkiego smoke-testu całego Storybooka</strong> po deployu</li>
-        <li>Team zna tylko Jest i nie ma zasobów na Playwright</li>
+    <div style="background:#dcfce7;border:2px solid #86efac;border-radius:10px;padding:.7em .9em">
+      <p style="margin:0 0 .4em;font-weight:700;color:#15803d;font-size:1.05em">🟢 Chromatic — w CI/PR</p>
+      <ul style="margin:0;padding-left:1.1em;line-height:1.8">
+        <li>Automatyczny PR check "UI Tests"</li>
+        <li>Reviewer zatwierdza zmiany wizualnie</li>
+        <li>Snapshoty w chmurze — nie w repo</li>
+        <li>Zero konfiguracji — auto-discovery</li>
+        <li>Historia buildów per branch/commit</li>
+        <li>TurboSnap — testuj tylko zmienione</li>
       </ul>
-      <p style="margin:.7em 0 .4em;font-weight:700;color:#dc2626;font-size:1em">❌ Ryzyka Storycap</p>
-      <ul style="margin:0;padding-left:1.2em;line-height:1.9">
-        <li>Peer deps konflikt ze Storybook 10 (<code>--legacy-peer-deps</code>)</li>
-        <li>Brak HTML raportu — tylko PNG pliki</li>
-        <li>Trudne testy stanów interaktywnych</li>
+    </div>
+    <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:.7em .9em">
+      <p style="margin:0 0 .4em;font-weight:700;color:#6b7280;font-size:1.05em">🟣 Storycap — opcjonalnie</p>
+      <ul style="margin:0;padding-left:1.1em;line-height:1.8">
+        <li>Setki stories bez pisania testów</li>
+        <li>Szybki smoke-test po deployu</li>
+        <li>Team wyłącznie na Jest</li>
+      </ul>
+      <p style="margin:.5em 0 .3em;font-weight:700;color:#dc2626;font-size:.95em">Ryzyka</p>
+      <ul style="margin:0;padding-left:1.1em;line-height:1.8">
+        <li>Peer deps konflikt (Storybook 10)</li>
+        <li>Brak HTML raportu</li>
+        <li>Brak interakcji</li>
       </ul>
     </div>
   </div>
@@ -1009,7 +1325,7 @@ npx playwright show-report</code></pre>
         <li>Pokryć wszystkie komponenty design systemu</li>
         <li>Dodać testy responsywności (mobile/tablet/desktop)</li>
         <li>Testy dark mode / motywy</li>
-        <li>Rozważyć <strong>Chromatic</strong> (cloud) dla PR review przez designerów</li>
+        <li>Wdrożyć <strong>Chromatic</strong> — PR review przez designerów i QA</li>
         <li>Integracja z design tokenami</li>
       </ul>
     </div>
@@ -1042,7 +1358,7 @@ npx playwright show-report</code></pre>
     <div>
       <p style="font-weight:700;color:var(--c-brand);margin-bottom:.5em">Długoterminowe</p>
       <div class="timeline">
-        <div class="tl-item">Rozważyć <strong>Percy / Chromatic</strong> — cloud visual testing z automatycznym review w PR</div>
+        <div class="tl-item">Wdrożyć <strong>Chromatic</strong> w CI — PR check + UI review dla designerów i QA</div>
         <div class="tl-item">Docker dla spójności screenshotów między OS (font rendering)</div>
         <div class="tl-item">Testy responsywności — wiele viewportów (mobile, tablet, desktop)</div>
         <div class="tl-item">Integracja z design tokenami — alert gdy token zmienia wartość</div>
@@ -1056,37 +1372,38 @@ npx playwright show-report</code></pre>
 ════════════════════════════════════════════════════════════ -->
 <section>
   <h2 style="margin-bottom:.5em">Dziękuję</h2>
-  <p style="font-size:.8em;color:#6b7280;margin-bottom:1.5em">Repozytorium POC zawiera działający kod dla obu podejść</p>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1em;font-size:.7em">
-    <div style="background:#f5f3ff;border-radius:10px;padding:1em">
-      <p style="margin:0 0 .5em;font-weight:700;color:var(--c-brand)">Uruchomienie lokalne</p>
-      <pre style="font-size:.9em;margin:0"><code class="language-bash"># Storybook
-npm run storybook
+  <p style="font-size:.8em;color:#6b7280;margin-bottom:.8em">Repozytorium POC zawiera działający kod dla wszystkich 3 podejść</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8em;font-size:.65em">
+    <div style="background:#f5f3ff;border-radius:10px;padding:.8em">
+      <p style="margin:0 0 .4em;font-weight:700;color:#6d28d9">🟣 Storycap + Jest</p>
+      <pre style="font-size:.9em;margin:0"><code class="language-bash"># Capture + porównaj
+npm run test:visual:storycap
 
-# Playwright (baseline)
+# Aktualizuj baseline
+npm run test:visual:storycap:update</code></pre>
+    </div>
+    <div style="background:#dbeafe;border-radius:10px;padding:.8em">
+      <p style="margin:0 0 .4em;font-weight:700;color:#1d4ed8">🔵 Playwright</p>
+      <pre style="font-size:.9em;margin:0"><code class="language-bash"># Stwórz baseline
 npm run test:visual:playwright:update
 
-# Playwright (regresje)
+# Wykryj regresje
 npm run test:visual:playwright
 
-# Raport
+# HTML raport
 npx playwright show-report</code></pre>
     </div>
-    <div style="background:#f0fdf4;border-radius:10px;padding:1em">
-      <p style="margin:0 0 .5em;font-weight:700;color:#15803d">Struktura projektu</p>
-      <pre style="font-size:.9em;margin:0"><code class="language-text">src/app/components/
-  button/   ← komponent + story
-  input/    ← komponent + story
-  card/     ← komponent + story
-e2e/visual/
-  button.visual.spec.ts
-  input.visual.spec.ts
-  card.visual.spec.ts
-__snapshots__/
-  *.png     ← baseline screenshots</code></pre>
+    <div style="background:#dcfce7;border-radius:10px;padding:.8em">
+      <p style="margin:0 0 .4em;font-weight:700;color:#15803d">🟢 Chromatic</p>
+      <pre style="font-size:.9em;margin:0"><code class="language-bash"># Wyślij build do chmury
+npx chromatic \
+  --project-token=chpt_xxx
+
+# Z env variable
+npm run test:visual:chromatic</code></pre>
     </div>
   </div>
-  <p style="font-size:1.2em;margin-top:1.2em">❓ Pytania?</p>
+  <p style="font-size:1.2em;margin-top:1em">❓ Pytania?</p>
 </section>
 
 </div>

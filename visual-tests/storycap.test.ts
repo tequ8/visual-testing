@@ -69,6 +69,8 @@ describe('Button component screenshots', () => {
     'Large Primary',
     'Small Secondary',
     'Large Secondary',
+    'Primary Hover',
+    'Secondary Hover',
   ];
 
   for (const story of stories) {
