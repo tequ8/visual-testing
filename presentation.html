@@ -814,7 +814,57 @@ jobs:
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════
-     SLAJD 10f – CHROMATIC SELF-HOSTED
+     SLAJD 10f – CHROMATIC CO DAJE ZESPOŁOWI
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 3 — co Chromatic daje zespołowi?</h2>
+  <div style="display:flex;flex-direction:column;gap:.5em;margin-top:.7em;font-size:.7em">
+
+    <div style="display:flex;align-items:flex-start;gap:.8em;background:#f0fdf4;border-left:4px solid #16a34a;border-radius:6px;padding:.6em 1em">
+      <span style="font-size:1.3em;line-height:1;flex-shrink:0">👥</span>
+      <div>
+        <strong style="color:#15803d">UI Review — wspólna decyzja, nie tylko "test padł"</strong><br>
+        <span style="color:#374151">Każda zmiana wizualna w PRze trafia do przeglądarki jako osobny widok. Reviewer widzi stary wygląd, nowy wygląd i diff. Klika Accept albo Deny. Merge nie przejdzie dopóki ktoś tego nie zatwierdzi — dokładnie jak code review, ale dla pikseli.</span>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:flex-start;gap:.8em;background:#f0fdf4;border-left:4px solid #16a34a;border-radius:6px;padding:.6em 1em">
+      <span style="font-size:1.3em;line-height:1;flex-shrink:0">✍️</span>
+      <div>
+        <strong style="color:#15803d">Zero testów do pisania</strong><br>
+        <span style="color:#374151">Chromatic sam wykrywa wszystkie stories ze Storybooka. Dodajesz nowy komponent, piszesz story — automatycznie jest objęty testami wizualnymi. Nie musisz pamiętać żeby dodać go do żadnego pliku testowego.</span>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:flex-start;gap:.8em;background:#f0fdf4;border-left:4px solid #16a34a;border-radius:6px;padding:.6em 1em">
+      <span style="font-size:1.3em;line-height:1;flex-shrink:0">🕐</span>
+      <div>
+        <strong style="color:#15803d">Historia buildów</strong><br>
+        <span style="color:#374151">Każdy build jest zachowany. Możesz wrócić do dowolnego commita i zobaczyć jak wyglądał komponent w tamtym momencie. Przy Playwrighcie masz baseline'y w repo — ale nie masz takiej nawigacji.</span>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:flex-start;gap:.8em;background:#f0fdf4;border-left:4px solid #16a34a;border-radius:6px;padding:.6em 1em">
+      <span style="font-size:1.3em;line-height:1;flex-shrink:0">⚡</span>
+      <div>
+        <strong style="color:#15803d">TurboSnap — testuje tylko to co się zmieniło</strong><br>
+        <span style="color:#374151">Chromatic analizuje które pliki zmieniły się w PRze i testuje tylko powiązane stories. Na dużym projekcie to robi ogromną różnicę w czasie buildu.</span>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:flex-start;gap:.8em;background:#f0fdf4;border-left:4px solid #16a34a;border-radius:6px;padding:.6em 1em">
+      <span style="font-size:1.3em;line-height:1;flex-shrink:0">📦</span>
+      <div>
+        <strong style="color:#15803d">Snapshoty w chmurze — nie w repozytorium</strong><br>
+        <span style="color:#374151">Przy dużym design systemie z setkami komponentów baseline'y PNG mogą ważyć dziesiątki megabajtów. U Chromatic tego w repo nie ma.</span>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10g – CHROMATIC SELF-HOSTED
 ════════════════════════════════════════════════════════════ -->
 <section>
   <h2>Chromatic — czy można hostować we własnej infrastrukturze?</h2>
