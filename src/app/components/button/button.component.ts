@@ -57,8 +57,8 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 
     /* Variants */
     button.variant-primary {
-      background-color: #4f46e5;
-      color: #ffffff;
+      background-color: #16a34a;
+      color: #000000;
     }
 
     button.variant-primary:hover:not(:disabled) {
