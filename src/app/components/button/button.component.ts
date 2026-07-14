@@ -46,7 +46,7 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
     }
 
     button.size-md {
-      padding: 30px 20px;
+      padding: 10px 20px;
       font-size: 14px;
     }
 
@@ -57,8 +57,8 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 
     /* Variants */
     button.variant-primary {
-      background-color: #16a34a;
-      color: #000000;
+      background-color: #dc2626;
+      color: #ffffff;
     }
 
     button.variant-primary:hover:not(:disabled) {
