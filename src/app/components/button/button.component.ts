@@ -46,7 +46,7 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
     }
 
     button.size-md {
-      padding: 30px 20px;
+      padding: 10px 20px;
       font-size: 14px;
     }
 
