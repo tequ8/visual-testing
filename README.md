@@ -253,6 +253,68 @@ ID story: `<title-kebab>--<story-name-kebab>`, np.:
 
 ---
 
+## Lost Pixel
+
+[Lost Pixel](https://lost-pixel.com) to open-source'owa alternatywa dla Chromatic — w trybie OSS (użytym w tym projekcie) działa **w pełni lokalnie i za darmo**, bez limitu snapshotów i bez wysyłania niczego do chmury. Podobnie jak Chromatic ma **auto-discovery stories**: nie potrzebuje osobnego narzędzia do robienia screenshotów (jak Argos), tylko czyta zbudowany Storybook bezpośrednio.
+
+```
+build-storybook  → statyczny build do storybook-static/
+lost-pixel       → czyta storybook-static, auto-wykrywa wszystkie stories
+  → renderuje każdą story w headless Playwright
+  → porównuje z lokalnym baselinem w .lostpixel/baseline/
+  → PASS/FAIL + diff PNG w .lostpixel/difference/ (jeśli są różnice)
+```
+
+### Uruchomienie
+
+```bash
+# Pierwsze uruchomienie — tworzy baseline
+npm run test:visual:lostpixel:update
+
+# Kolejne uruchomienia — wykrywa regresje
+npm run test:visual:lostpixel
+```
+
+### Wynik POC
+
+28 / 28 stories ✅, 0 różnic — baseline w `.lostpixel/baseline/`, uruchomione w pełni lokalnie (bez tokenu, bez konta).
+
+Konfiguracja w `lostpixel.config.ts` — projekt używa trybu OSS (`storybookShots`). Plik zawiera też (zakomentowaną) konfigurację trybu **Lost Pixel Platform** — płatnego, hostowanego review UI, na wypadek gdyby zespół chciał później przejść na cloud review bez zmiany testów.
+
+---
+
+## Argos CI
+
+[Argos](https://argos-ci.com) to chmurowa platforma do review zmian wizualnych, podobna w duchu do Chromatica — ale w przeciwieństwie do niego **nie renderuje Storybooka samodzielnie**. Argos jest generycznym narzędziem do uploadu i porównywania screenshotów, więc wymaga osobnego kroku, który je wygeneruje. W tym projekcie do tego celu ponownie wykorzystywany jest Storycap (Podejście 1).
+
+```
+storycap  → generuje PNG do __screenshots__/
+argos upload __screenshots__ → wysyła screenshoty do Argos
+  → Argos porównuje z poprzednim zaakceptowanym buildem
+  → reviewer zatwierdza/odrzuca zmiany w UI Argos
+```
+
+### Uruchomienie
+
+Wymaga konta na [argos-ci.com](https://argos-ci.com) i tokenu repozytorium:
+
+```bash
+export ARGOS_TOKEN=<repository token>
+npm run test:visual:argos
+```
+
+### Różnice względem Chromatic
+
+| | Chromatic | Argos |
+|---|---|---|
+| Renderowanie stories | W chmurze (auto-discovery) | Lokalnie, dowolnym narzędziem (tu: Storycap) |
+| Zero-config | Tak | Nie — wymaga kroku capture |
+| Review UI / PR check | Tak | Tak |
+| Zarządzanie flaky testami | — | `argos change` (ignore/unignore) |
+| Równoległe buildy (sharding CI) | Tak | Tak (`--parallel`) |
+
+---
+
 ## CI / Docker
 
 Playwright snapshoty mogą różnić się między systemami operacyjnymi (renderowanie fontów). Żeby uniknąć fałszywych failów na CI, można uruchamiać testy w oficjalnym obrazie Playwright:

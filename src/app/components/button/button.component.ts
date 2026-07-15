@@ -57,7 +57,7 @@ export type ButtonSize = 'sm' | 'md' | 'lg';
 
     /* Variants */
     button.variant-primary {
-      background-color: #dc2626;
+      background-color: #2563eb;
       color: #ffffff;
     }
 

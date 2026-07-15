@@ -39,6 +39,8 @@
     .pill-red    { background: #fee2e2; color: #b91c1c; }
     .pill-amber  { background: #fef3c7; color: #b45309; }
     .pill-gray   { background: #f3f4f6; color: #374151; }
+    .pill-orange { background: #ffedd5; color: #c2410c; }
+    .pill-pink   { background: #fce7f3; color: #be185d; }
 
     /* ── flow diagram ── */
     .flow {
@@ -232,6 +234,8 @@
     <span class="pill pill-gray">Storycap + Jest</span>
     <span class="pill pill-blue">Playwright</span>
     <span class="pill pill-green">Chromatic</span>
+    <span class="pill pill-pink">Lost Pixel</span>
+    <span class="pill pill-orange">Argos CI</span>
   </div>
 </section>
 
@@ -282,21 +286,31 @@
   <p style="font-size:.72em;text-align:center;color:#6b7280;margin-bottom:1em">
     Każda story = izolowany przypadek testowy dla konkretnego stanu komponentu
   </p>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8em;font-size:.72em">
-    <div style="background:#f5f3ff;border-radius:10px;padding:.8em 1em;border:2px solid #c4b5fd">
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.6em;font-size:.58em">
+    <div style="background:#f5f3ff;border-radius:10px;padding:.7em .9em;border:2px solid #c4b5fd">
       <strong style="color:#6d28d9">Podejście 1</strong><br>
       <span>Storycap + jest-image-snapshot + Jest</span><br>
       <span class="text-muted">Puppeteer robi screenshoty → Jest porównuje z baseline</span>
     </div>
-    <div style="background:#dbeafe;border-radius:10px;padding:.8em 1em;border:2px solid #93c5fd">
+    <div style="background:#dbeafe;border-radius:10px;padding:.7em .9em;border:2px solid #93c5fd">
       <strong style="color:#1d4ed8">Podejście 2</strong><br>
       <span>Playwright Visual Testing</span><br>
       <span class="text-muted">Playwright otwiera story, robi screenshot, porównuje</span>
     </div>
-    <div style="background:#dcfce7;border-radius:10px;padding:.8em 1em;border:2px solid #86efac">
+    <div style="background:#dcfce7;border-radius:10px;padding:.7em .9em;border:2px solid #86efac">
       <strong style="color:#15803d">Podejście 3</strong><br>
       <span>Chromatic — cloud visual testing</span><br>
       <span class="text-muted">Build → upload do chmury → UI review w przeglądarce</span>
+    </div>
+    <div style="background:#ffedd5;border-radius:10px;padding:.7em .9em;border:2px solid #fdba74">
+      <strong style="color:#c2410c">Podejście 4</strong><br>
+      <span>Argos CI — generic screenshot review</span><br>
+      <span class="text-muted">Storycap capture → upload → UI review w przeglądarce</span>
+    </div>
+    <div style="background:#fce7f3;border-radius:10px;padding:.7em .9em;border:2px solid #f9a8d4">
+      <strong style="color:#be185d">Podejście 5</strong><br>
+      <span>Lost Pixel — lokalny visual testing</span><br>
+      <span class="text-muted">Build Storybook → auto-discovery → porównanie lokalne</span>
     </div>
   </div>
 </section>
@@ -915,17 +929,561 @@ jobs:
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10gg – reg-suit + S3: KONFIGURACJA REVIEW UI
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>reg-suit + S3 — jak skonfigurować własną review UI</h2>
+  <div class="two-col">
+    <div>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin-bottom:.3em">1. Instalacja pluginu</p>
+      <pre><code class="language-bash">npm install --save-dev reg-publish-s3-plugin</code></pre>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin:.7em 0 .3em">2. regconfig.json</p>
+      <pre style="font-size:.6em"><code class="language-json">{
+  "core": {
+    "addonModules": [
+      "reg-keygen-git-hash-plugin",
+      "reg-publish-s3-plugin"
+    ]
+  },
+  "plugins": {
+    "reg-publish-s3-plugin": {
+      "bucketName": "nasz-bucket-reg-suit"
+    }
+  }
+}</code></pre>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin:.7em 0 .3em">3. Uruchomienie — bez zmian</p>
+      <pre><code class="language-bash">npm run test:visual:reg-suit</code></pre>
+    </div>
+    <div>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin-bottom:.3em">4. AWS — skąd wziąć dostęp</p>
+      <p style="font-size:.63em;color:#6b7280;line-height:1.7;margin:0 0 .5em">
+        IAM Console → Users → <strong>Create access key</strong> (typ CLI) → <code>AWS_ACCESS_KEY_ID</code> / <code>AWS_SECRET_ACCESS_KEY</code>. W CI lepiej: OIDC + IAM Role, bez zapisywania sekretów.
+      </p>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin:.6em 0 .3em">5. Bucket S3 + uprawnienia</p>
+      <pre style="font-size:.55em"><code class="language-bash">aws s3 mb s3://nasz-bucket-reg-suit \
+  --region eu-central-1</code></pre>
+      <pre style="font-size:.5em"><code class="language-json">{
+  "Effect": "Allow",
+  "Action": ["s3:PutObject","s3:GetObject","s3:ListBucket"],
+  "Resource": ["arn:aws:s3:::nasz-bucket-reg-suit/*"]
+}</code></pre>
+      <p style="font-size:.62em;color:#6b7280;margin-top:.5em">
+        💡 Kreator <code>npx reg-suit prepare</code> potrafi założyć bucket i wygenerować config automatycznie.
+      </p>
+    </div>
+  </div>
+  <div style="background:#1e1b4b;border-radius:8px;padding:.6em 1em;font-size:.64em;margin-top:.6em;color:#c7d2fe">
+    <strong style="color:#a5b4fc">Co dostajemy:</strong> raport HTML z diffami wrzucany na nasz S3 po każdym runie, link wypisywany w terminalu/CI (opcjonalnie jako komentarz na PR przez <code>reg-notify-github-plugin</code>). Bucket i dane cały czas w naszej infrastrukturze — zero SaaS.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10g – PODEJŚCIE 4: ARGOS CI (WPROWADZENIE)
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 4 — Argos CI</h2>
+  <div class="flow" style="margin:.8em 0">
+    <div class="flow-box" style="background:#ffedd5;border-color:#ea580c">Storycap<br>capture</div>
+    <div class="flow-arrow" style="color:#ea580c">→</div>
+    <div class="flow-box" style="background:#ffedd5;border-color:#ea580c">Upload<br>do Argos</div>
+    <div class="flow-arrow" style="color:#ea580c">→</div>
+    <div class="flow-box" style="background:#ffedd5;border-color:#ea580c">Porównanie<br>z poprzednim</div>
+    <div class="flow-arrow" style="color:#ea580c">→</div>
+    <div class="flow-box" style="background:#ffedd5;border-color:#ea580c">PR check</div>
+    <div class="flow-arrow" style="color:#ea580c">→</div>
+    <div class="flow-box" style="background:#ffedd5;border-color:#ea580c">UI Review<br>w przeglądarce</div>
+  </div>
+  <div class="timeline">
+    <div class="tl-item"><strong>1.</strong> <code>npm run capture:storycap</code> — Argos nie renderuje Storybooka sam, więc screenshoty generuje Storycap (jak w Podejściu 1)</div>
+    <div class="tl-item"><strong>2.</strong> <code>argos upload __screenshots__ --token=$ARGOS_TOKEN</code> — wysyła PNG do Argos</div>
+    <div class="tl-item"><strong>3.</strong> Argos porównuje z poprzednim zaakceptowanym buildem dla brancha</div>
+    <div class="tl-item"><strong>4.</strong> Automatyczny PR check z linkiem do review</div>
+    <div class="tl-item"><strong>5.</strong> Reviewer zatwierdza lub odrzuca zmiany w UI Argos — jak w Chromatic</div>
+  </div>
+  <div style="background:#fff7ed;border-left:4px solid #ea580c;border-radius:6px;padding:.5em 1em;font-size:.65em;margin-top:.6em">
+    <strong>Status POC:</strong> <strong>28 screenshotów</strong> gotowych do uploadu w <code>__screenshots__/</code> (te same co Podejście 1) — uruchomienie wymaga konta i tokenu na <code>argos-ci.com</code> (<code>ARGOS_TOKEN</code>)
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10h – PODEJŚCIE 4: ARGOS W PRAKTYCE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 4 — Argos w praktyce</h2>
+  <div class="two-col">
+    <div>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin-bottom:.3em">Instalacja i uruchomienie</p>
+      <pre><code class="language-bash"># Instalacja
+npm install --save-dev @argos-ci/cli
+
+# Screenshoty (Storycap) + upload
+npm run capture:storycap
+npx argos upload __screenshots__ --token=argos_xxx
+
+# Z package.json (token z env)
+npm run test:visual:argos</code></pre>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin:.7em 0 .3em">package.json</p>
+      <pre><code class="language-json">"scripts": {
+  "test:visual:argos":
+    "npm run capture:storycap &&
+     argos upload __screenshots__
+     --token=$ARGOS_TOKEN"
+}</code></pre>
+      <p style="font-size:.63em;color:#6b7280;margin-top:.5em">
+        💡 W przeciwieństwie do Chromatic, Argos nie renderuje Storybooka — to generyczne narzędzie do uploadu i diffowania screenshotów z dowolnego źródła (Storycap, Playwright, Cypress...)
+      </p>
+    </div>
+    <div>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin-bottom:.3em">GitHub Actions CI</p>
+      <pre style="font-size:.48em"><code class="language-yaml"># .github/workflows/argos.yml
+name: Argos
+on: [push]
+jobs:
+  argos:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - name: Capture screenshots
+        run: npm run capture:storycap
+      - name: Upload to Argos
+        run: npx argos upload __screenshots__
+        env:
+          ARGOS_TOKEN: ${{ secrets.ARGOS_TOKEN }}</code></pre>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin:.6em 0 .3em">Przepływ PR z Argos</p>
+      <div class="flow" style="margin:.3em 0;flex-wrap:wrap">
+        <div class="flow-box" style="background:#ffedd5;border-color:#ea580c;font-size:.6em">Push<br>do PR</div>
+        <div class="flow-arrow" style="color:#ea580c;font-size:.8em">→</div>
+        <div class="flow-box" style="background:#ffedd5;border-color:#ea580c;font-size:.6em">CI: capture<br>+ upload</div>
+        <div class="flow-arrow" style="color:#ea580c;font-size:.8em">→</div>
+        <div class="flow-box" style="background:#fef3c7;border-color:#d97706;font-size:.6em">Check:<br>"Argos"</div>
+        <div class="flow-arrow" style="color:#d97706;font-size:.8em">→</div>
+        <div class="flow-box" style="background:#ffedd5;border-color:#ea580c;font-size:.6em">Reviewer<br>zatwierdza</div>
+        <div class="flow-arrow" style="color:#ea580c;font-size:.8em">→</div>
+        <div class="flow-box" style="background:#ffedd5;border-color:#ea580c;font-size:.6em">Merge<br>✅</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10hh – PODEJŚCIE 4: ARGOS — LIVE DEMO BRANCH VS MAIN
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 4 — live demo: dlaczego niektóre buildy są "auto-approved"?</h2>
+  <p style="font-size:.65em;color:#6b7280;margin:.1em 0 .6em">Realny upload z tego repo do Argos — dwa buildy, ten sam kod, różny wynik</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8em;font-size:.66em">
+    <div style="background:#f0fdf4;border:2px solid #86efac;border-radius:12px;padding:.7em 1em">
+      <p style="margin:0 0 .4em;font-weight:700;color:#15803d">main → main (build #7)</p>
+      <ul style="margin:0;padding-left:1.1em;line-height:1.8">
+        <li>Upload bezpośrednio na branchu bazowym</li>
+        <li><code>github.state: success</code></li>
+        <li>opis: <em>"automatically approved"</em></li>
+        <li>brak PR-a → nie ma czego blokować, build staje się nowym baseline'em</li>
+      </ul>
+    </div>
+    <div style="background:#fef2f2;border:2px solid #fca5a5;border-radius:12px;padding:.7em 1em">
+      <p style="margin:0 0 .4em;font-weight:700;color:#b91c1c">demo/regresja-paddingu → main (build #9)</p>
+      <ul style="margin:0;padding-left:1.1em;line-height:1.8">
+        <li>Upload z osobnego brancha, referencja jawnie do <code>main</code></li>
+        <li><code>github.state: failure</code></li>
+        <li>opis: <em>"7 changed — waiting for your decision"</em></li>
+        <li>w realnym repo: <strong>blokuje merge PR-a</strong> do czasu ręcznej recenzji</li>
+      </ul>
+    </div>
+  </div>
+
+  <p style="font-size:.65em;font-weight:600;color:#6b7280;margin:.8em 0 .3em">Odpowiedź z API Argos (<code>argos build get --json</code>)</p>
+  <pre style="font-size:.58em"><code class="language-json">"notification": {
+  "description": "7 changed — waiting for your decision",
+  "github": { "state": "failure" }
+}</code></pre>
+
+  <div style="background:#1e1b4b;border-radius:8px;padding:.6em 1em;font-size:.64em;margin-top:.6em;color:#c7d2fe">
+    <strong style="color:#a5b4fc">Wniosek:</strong> Argos auto-zatwierdza tylko wtedy, gdy <code>head.branch == base.branch</code> — czyli push bezpośrednio na main. Prawdziwa recenzja (blokująca merge) pojawia się tylko dla builda z osobnego brancha porównanego z main. Approve/reject z CLI (<code>argos review create</code>) wymaga osobnego <strong>personal access tokena</strong> — token repo (CI) może tylko wysyłać i czytać, nie zatwierdzać.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10i – PODEJŚCIE 4: PROS/CONS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 4 — zalety i wady</h2>
+  <div class="pros-cons" style="margin-top:.8em">
+    <div class="box-pro">
+      <h4>✅ Zalety</h4>
+      <ul>
+        <li><strong>UI Review</strong> w chmurze — zatwierdzanie/odrzucanie zmian wizualnie, tak jak w Chromatic</li>
+        <li><strong>Niezależne od źródła screenshotów</strong> — działa z Storycap, Playwright, Cypress, dowolnym narzędziem generującym PNG</li>
+        <li><strong>Zarządzanie flaky testami</strong> — <code>argos change</code> pozwala oznaczyć zmianę jako flaky, żeby nie failowała kolejnych buildów</li>
+        <li><strong>Równoległe buildy</strong> — <code>--parallel</code> łączy sharded runy CI w jeden build</li>
+        <li>Konfigurowalny próg czułości diffa per upload (<code>--threshold</code>)</li>
+        <li>Snapshoty trzymane w chmurze — nie zaśmiecają repozytorium</li>
+      </ul>
+    </div>
+    <div class="box-con">
+      <h4>⚠️ Wady</h4>
+      <ul>
+        <li><strong>Brak zero-config</strong> — w odróżnieniu od Chromatic wymaga osobnego kroku capture (tu: Storycap), więc dziedziczy jego ograniczenia (Chromium only, brak play functions)</li>
+        <li>Dwa narzędzia do utrzymania zamiast jednego (capture + upload) — więcej ruchomych części w CI</li>
+        <li>Screenshoty i metadane trafiają do zewnętrznego serwera — ta sama kwestia bezpieczeństwa co przy Chromatic</li>
+        <li>Mniejszy ekosystem i społeczność niż Chromatic (który jest ściśle zintegrowany ze Storybookiem)</li>
+        <li>Konto i token wymagane do startu</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10j – PODEJŚCIE 5: LOST PIXEL (WPROWADZENIE)
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 5 — Lost Pixel</h2>
+  <div class="flow" style="margin:.8em 0">
+    <div class="flow-box" style="background:#fce7f3;border-color:#db2777">Build<br>Storybook</div>
+    <div class="flow-arrow" style="color:#db2777">→</div>
+    <div class="flow-box" style="background:#fce7f3;border-color:#db2777">Lost Pixel<br>auto-discovery</div>
+    <div class="flow-arrow" style="color:#db2777">→</div>
+    <div class="flow-box" style="background:#fce7f3;border-color:#db2777">Playwright<br>renderuje</div>
+    <div class="flow-arrow" style="color:#db2777">→</div>
+    <div class="flow-box" style="background:#fce7f3;border-color:#db2777">Porównanie<br>lokalne</div>
+    <div class="flow-arrow" style="color:#db2777">→</div>
+    <div class="flow-box" style="background:#fce7f3;border-color:#db2777">PASS/FAIL<br>+ diff PNG</div>
+  </div>
+  <div class="timeline">
+    <div class="tl-item"><strong>1.</strong> <code>npm run build-storybook</code> — statyczny build Storybooka do <code>storybook-static/</code></div>
+    <div class="tl-item"><strong>2.</strong> <code>lost-pixel</code> czyta build i <strong>automatycznie wykrywa wszystkie stories</strong> — zero-config, jak Chromatic</div>
+    <div class="tl-item"><strong>3.</strong> Każda story renderowana headlessly przez wbudowany Playwright i screenshotowana</div>
+    <div class="tl-item"><strong>4.</strong> Porównanie z lokalnym baselinem w <code>.lostpixel/baseline/</code></div>
+    <div class="tl-item"><strong>5.</strong> PASS/FAIL lokalnie — diff PNG do <code>.lostpixel/difference/</code>, nic nie opuszcza maszyny</div>
+  </div>
+  <div style="background:#fdf2f8;border-left:4px solid #db2777;border-radius:6px;padding:.5em 1em;font-size:.65em;margin-top:.6em">
+    <strong>Wynik POC:</strong> <strong>28 / 28 ✅ · 0 różnic</strong> — baseline w <code>.lostpixel/baseline/</code>, uruchomione w pełni lokalnie, bez konta i bez tokenu
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10k – PODEJŚCIE 5: LOST PIXEL W PRAKTYCE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 5 — Lost Pixel w praktyce</h2>
+  <div class="two-col">
+    <div>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin-bottom:.3em">Instalacja i uruchomienie</p>
+      <pre><code class="language-bash"># Instalacja
+npm install --save-dev lost-pixel
+
+# Pierwsze uruchomienie (tworzy baseline)
+npm run build-storybook
+npx lost-pixel update
+
+# Z package.json
+npm run test:visual:lostpixel</code></pre>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin:.7em 0 .3em">lostpixel.config.ts</p>
+      <pre><code class="language-json">export const config = {
+  storybookShots: {
+    storybookUrl: './storybook-static',
+  },
+  failOnDifference: true,
+}</code></pre>
+      <p style="font-size:.63em;color:#6b7280;margin-top:.5em">
+        💡 Zero dodatkowej konfiguracji testów — tak jak Chromatic, Lost Pixel sam czyta wszystkie stories z buildu
+      </p>
+    </div>
+    <div>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin-bottom:.3em">GitHub Actions CI</p>
+      <pre style="font-size:.48em"><code class="language-yaml"># .github/workflows/lost-pixel.yml
+name: Lost Pixel
+on: [push]
+jobs:
+  lost-pixel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - run: npm run build-storybook
+      - name: Compare screenshots
+        run: npx lost-pixel
+      - name: Upload diff artifact
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: lost-pixel-diff
+          path: .lostpixel/difference/</code></pre>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin:.6em 0 .3em">Tryb OSS vs Platform</p>
+      <p style="font-size:.63em;color:#6b7280;line-height:1.6">
+        W CI baseline trzeba zacommitować do repo (jak Playwright) albo cache'ować jako artefakt. Chcąc dostać natywny PR check i UI review w chmurze bez zmiany testów, wystarczy przełączyć config na płatny tryb <strong>Lost Pixel Platform</strong>.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10l – PODEJŚCIE 5: PROS/CONS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 5 — zalety i wady</h2>
+  <div class="pros-cons" style="margin-top:.8em">
+    <div class="box-pro">
+      <h4>✅ Zalety</h4>
+      <ul>
+        <li><strong>Zero-config auto-discovery</strong> — czyta stories bezpośrednio z buildu Storybooka, tak jak Chromatic, bez osobnego narzędzia capture (w odróżnieniu od Argos)</li>
+        <li><strong>W pełni lokalne i darmowe</strong> — open source, bez limitu snapshotów, dane nie opuszczają infrastruktury</li>
+        <li>Renderuje przez wbudowany Playwright — jakość zbliżona do Podejścia 2</li>
+        <li>Opcjonalna ścieżka do płatnego <strong>Lost Pixel Platform</strong> (hosted UI review) bez przepisywania testów</li>
+        <li>Prosty, jednokomendowy workflow — <code>lost-pixel</code> / <code>lost-pixel update</code></li>
+      </ul>
+    </div>
+    <div class="box-con">
+      <h4>⚠️ Wady</h4>
+      <ul>
+        <li><strong>Brak UI review w trybie OSS</strong> — lokalnie to tylko pliki PNG + kod wyjścia, jak Storycap</li>
+        <li>Baseline trzeba trzymać w repo lub jako artefakt CI — bez natywnego PR checka (bez płatnego Platform)</li>
+        <li>Wymaga zbudowanego Storybooka przed uruchomieniem — dodatkowy krok w CI</li>
+        <li>Chromium only domyślnie — multi-browser wymaga dodatkowej konfiguracji</li>
+        <li><strong>⚠️ Projekt "sunsetted"</strong> — zespół Lost Pixel dołączył do Figmy, repo zarchiwizowane 22.04.2026. Tryb OSS (pakiet npm) nadal działa, ale bez dalszego rozwoju — ryzykowny wybór na przyszłość</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10m – PODEJŚCIE 6: PERCY (WPROWADZENIE)
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 6 — Percy (BrowserStack)</h2>
+  <p style="font-size:.62em;color:#b45309;font-weight:600;margin:.1em 0 .5em">⚠️ Testowane live w tym POC — napotkaliśmy problemy z niezawodnością, patrz slajd "w praktyce"</p>
+  <div class="flow" style="margin:.8em 0">
+    <div class="flow-box" style="background:#f3e8ff;border-color:#7c3aed">Build<br>Storybook</div>
+    <div class="flow-arrow" style="color:#7c3aed">→</div>
+    <div class="flow-box" style="background:#f3e8ff;border-color:#7c3aed">percy storybook<br>auto-discovery</div>
+    <div class="flow-arrow" style="color:#7c3aed">→</div>
+    <div class="flow-box" style="background:#f3e8ff;border-color:#7c3aed">DOM snapshot<br>→ render w chmurze</div>
+    <div class="flow-arrow" style="color:#7c3aed">→</div>
+    <div class="flow-box" style="background:#f3e8ff;border-color:#7c3aed">PR check</div>
+    <div class="flow-arrow" style="color:#7c3aed">→</div>
+    <div class="flow-box" style="background:#f3e8ff;border-color:#7c3aed">UI Review<br>w przeglądarce</div>
+  </div>
+  <div class="timeline">
+    <div class="tl-item"><strong>1.</strong> <code>npm run build-storybook</code> — Percy ma oficjalne Storybook SDK, więc jak Chromatic/Lost Pixel <strong>auto-wykrywa wszystkie stories</strong></div>
+    <div class="tl-item"><strong>2.</strong> Kluczowa różnica: Percy przechwytuje <strong>snapshot DOM</strong> (nie obraz PNG) i renderuje go ponownie po swojej stronie w wielu przeglądarkach/szerokościach</div>
+    <div class="tl-item"><strong>3.</strong> Porównanie z baseline dla brancha, automatyczny PR check</div>
+    <div class="tl-item"><strong>4.</strong> Reviewer zatwierdza w webowym UI Percy (część BrowserStack)</div>
+  </div>
+  <div style="background:#faf5ff;border-left:4px solid #7c3aed;border-radius:6px;padding:.5em 1em;font-size:.65em;margin-top:.6em">
+    <strong>Free tier:</strong> 5 000 screenshotów/mies., unlimited users i projektów — potem pay-as-you-go z rabatami przy większym wolumenie
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10n – PODEJŚCIE 6: PERCY W PRAKTYCE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 6 — Percy w praktyce</h2>
+  <div class="two-col">
+    <div>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin-bottom:.3em">Instalacja i uruchomienie</p>
+      <pre><code class="language-bash"># Instalacja
+npm install --save-dev @percy/cli @percy/storybook
+
+# Token projektu
+export PERCY_TOKEN="percy_xxx"
+
+# Build + upload
+npm run build-storybook
+npx percy storybook ./storybook-static</code></pre>
+      <p style="font-size:.63em;color:#6b7280;margin-top:.5em">
+        💡 DOM-snapshot zamiast pixel-diff = Percy sam renderuje 1 przechwycony DOM w wielu przeglądarkach/rozdzielczościach bez ponownego capture — świetne przy wielu breakpointach, ale zawodzi przy canvas/WebGL/dynamicznych animacjach
+      </p>
+    </div>
+    <div>
+      <p style="font-size:.65em;font-weight:600;color:#b45309;margin-bottom:.3em">⚠️ Co się stało w naszym live demo</p>
+      <div style="background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:.6em .8em;font-size:.62em;line-height:1.8">
+        <p style="margin:0">Upload 28 story regularnie <strong>zawieszał się na etapie asset-discovery</strong> ("wait for network idle") — proces żył (aktywne procesy Chromium), ale bez postępu przez kilka-kilkanaście minut.</p>
+        <p style="margin:.5em 0 0">Próby: (1) domyślny timeout — brak wyniku po ~18 min; (2) flaga <code>--network-idle-timeout</code> odrzucona przez walidację CLI (limit 750ms) i wprowadziła proces w gorszy stan; (3) sama zmienna <code>PERCY_NETWORK_IDLE_WAIT_TIMEOUT</code> — nadal bez zakończenia po kilku minutach.</p>
+      </div>
+      <p style="font-size:.63em;color:#6b7280;margin-top:.6em">
+        Nie wiemy, czy to specyfika naszego środowiska (jakiś zasób w Storybooku, który nigdy nie osiąga "network idle") czy szerszy problem SDK — ale to realne ryzyko wdrożeniowe warte zweryfikowania przed decyzją, nie tylko punkt z dokumentacji
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10o – PODEJŚCIE 6: PROS/CONS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 6 — zalety i wady</h2>
+  <div class="pros-cons" style="margin-top:.8em">
+    <div class="box-pro">
+      <h4>✅ Zalety</h4>
+      <ul>
+        <li><strong>Zero-config auto-discovery</strong> — oficjalne Storybook SDK, tak jak Chromatic/Lost Pixel</li>
+        <li>DOM snapshot renderowany cross-browser/cross-width bez wielokrotnego capture — efektywne przy wielu breakpointach</li>
+        <li>Darmowy tier: 5 000 screenshotów/mies., unlimited users i projektów</li>
+        <li>Natywna integracja z ekosystemem BrowserStack (cross-browser/device testing)</li>
+      </ul>
+    </div>
+    <div class="box-con">
+      <h4>⚠️ Wady</h4>
+      <ul>
+        <li>Cloud SaaS — DOM i snapshoty trafiają na serwery BrowserStack</li>
+        <li>Podejście DOM-snapshot ma ograniczenia: canvas, WebGL, dynamiczne animacje mogą się renderować inaczej niż lokalnie</li>
+        <li>Powyżej free tier: pay-as-you-go, koszt rośnie z liczbą screenshotów</li>
+        <li><strong>W naszym live demo upload wielokrotnie się zawieszał</strong> na etapie "network idle" (asset-discovery) — nie udało się uzyskać wyniku w rozsądnym czasie mimo prób skrócenia timeoutu; wymaga dalszej weryfikacji przed decyzją</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10p – PODEJŚCIE 7: APPLITOOLS EYES (WPROWADZENIE)
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 7 — Applitools Eyes</h2>
+  <p style="font-size:.62em;color:#15803d;font-weight:600;margin:.1em 0 .5em">✅ Testowane live w tym POC — realny upload naszych 28 story i realny diff, nie tylko dokumentacja</p>
+  <div class="flow" style="margin:.8em 0">
+    <div class="flow-box" style="background:#ccfbf1;border-color:#0d9488">eyes-storybook<br>auto-discovery</div>
+    <div class="flow-arrow" style="color:#0d9488">→</div>
+    <div class="flow-box" style="background:#ccfbf1;border-color:#0d9488">Visual AI<br>(computer vision)</div>
+    <div class="flow-arrow" style="color:#0d9488">→</div>
+    <div class="flow-box" style="background:#ccfbf1;border-color:#0d9488">Panel w Storybooku<br>lub Dashboard</div>
+    <div class="flow-arrow" style="color:#0d9488">→</div>
+    <div class="flow-box" style="background:#ccfbf1;border-color:#0d9488">Approve/Reject</div>
+  </div>
+  <div class="timeline">
+    <div class="tl-item"><strong>1.</strong> <code>npx eyes-storybook</code> — auto-wykrywa wszystkie stories, zero kodu testowego (jak Chromatic/Lost Pixel/Percy)</div>
+    <div class="tl-item"><strong>2.</strong> Porównanie nie jest pixel-diffem — silnik <strong>Visual AI</strong> (computer vision) ocenia, czy różnica jest wizualnie znacząca, jak zrobiłby to człowiek</div>
+    <div class="tl-item"><strong>3.</strong> Efekt: mniej false positives z antyaliasingu/renderowania czcionek niż w klasycznym pixel-diff (Playwright, Storycap, reg-suit, Argos)</div>
+    <div class="tl-item"><strong>4.</strong> Jedyne z 7 porównywanych narzędzi z <strong>natywnym panelem diff wewnątrz Storybooka</strong> (Eyes Addon, styczeń 2026) — dokładnie to, czego brakuje Argos</div>
+  </div>
+  <div style="background:#f0fdfa;border-left:4px solid #0d9488;border-radius:6px;padding:.5em 1em;font-size:.65em;margin-top:.6em">
+    <strong>Cennik 2026:</strong> Free 50 Test Units/mies. · Eyes Starter ~899 USD/mies. (rocznie) · Enterprise/Dedicated Cloud — wyraźnie najdroższa opcja w zestawieniu
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10q – PODEJŚCIE 7: APPLITOOLS W PRAKTYCE
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 7 — Applitools Eyes w praktyce</h2>
+  <div class="two-col">
+    <div>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin-bottom:.3em">Instalacja i uruchomienie</p>
+      <pre><code class="language-bash"># Instalacja — UWAGA: nie @applitools/eyes.storybook
+# (ta nazwa jest deprecated, myliliśmy się przy pierwszej
+# próbie — poprawny pakiet to eyes-storybook, bez kropki)
+npm install --save-dev @applitools/eyes-storybook
+
+# Klucz API
+export APPLITOOLS_API_KEY="xxx"
+
+# Uruchomienie (auto-czyta .storybook/)
+npx eyes-storybook
+
+# Albo wskazując działający Storybook
+npx eyes-storybook -u http://localhost:6006</code></pre>
+      <p style="font-size:.63em;color:#6b7280;margin-top:.5em">
+        💡 Panel bezpośrednio w Storybooku: dodać <code>@applitools/eyes-storybook-addon</code> do <code>addons</code> w <code>.storybook/main.ts</code> — wynik testu widoczny obok Docs/A11y, bez wychodzenia z Storybooka
+      </p>
+    </div>
+    <div>
+      <p style="font-size:.65em;font-weight:600;color:#6b7280;margin-bottom:.3em">GitHub Actions CI</p>
+      <pre style="font-size:.48em"><code class="language-yaml"># .github/workflows/applitools.yml
+name: Applitools
+on: [push]
+jobs:
+  applitools:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci
+      - name: Eyes Storybook
+        run: npx eyes-storybook
+        env:
+          APPLITOOLS_API_KEY: ${{ secrets.APPLITOOLS_API_KEY }}</code></pre>
+      <p style="font-size:.63em;color:#6b7280;margin-top:.6em">
+        Zero-code checkpoints — każda story staje się testem wizualnym automatycznie, bez pisania <code>play</code> function ani osobnych testów
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10qq – PODEJŚCIE 7: APPLITOOLS — LIVE DEMO
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 7 — live demo: Visual AI w akcji</h2>
+  <p style="font-size:.65em;color:#6b7280;margin:.1em 0 .6em">Realny upload z tego repo do Applitools — baseline, potem zmiana koloru primary buttona</p>
+
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8em;font-size:.66em">
+    <div style="background:#f0fdfa;border:2px solid #5eead4;border-radius:12px;padding:.7em 1em">
+      <p style="margin:0 0 .4em;font-weight:700;color:#0f766e">Krok 1 — baseline (<code>npx eyes-storybook</code>)</p>
+      <ul style="margin:0;padding-left:1.1em;line-height:1.8">
+        <li>28 / 28 story — status <code>New</code></li>
+        <li>Auto-discovery zadziałał od razu, zero konfiguracji testów</li>
+        <li>Czas: ~50s dla całego Storybooka</li>
+      </ul>
+    </div>
+    <div style="background:#fef2f2;border:2px solid #fca5a5;border-radius:12px;padding:.7em 1em">
+      <p style="margin:0 0 .4em;font-weight:700;color:#b91c1c">Krok 2 — po zmianie koloru primary (czerwony → niebieski)</p>
+      <ul style="margin:0;padding-left:1.1em;line-height:1.8">
+        <li><strong>21 Passed</strong>, <strong>7 Unresolved</strong></li>
+        <li>Wykryte dokładnie: wszystkie warianty <em>Primary</em> + jedna Card z primary buttonem w środku</li>
+        <li>Reszta (Secondary, Input, Card bez primary, Example/*) — bez zmian, poprawnie pominięta</li>
+      </ul>
+    </div>
+  </div>
+
+  <div style="background:#1e1b4b;border-radius:8px;padding:.6em 1em;font-size:.64em;margin-top:.6em;color:#c7d2fe">
+    <strong style="color:#5eead4">Wniosek:</strong> Visual AI trafił idealnie precyzyjnie — 7 zmienionych story to dokładnie te, w których faktycznie renderuje się <code>.variant-primary</code> (łącznie z Card, który go w sobie zagnieżdża), bez żadnego szumu czy false positive na resztę 21 niezmienionych. Wynik dostępny w Applitools Dashboard z linkiem do konkretnego builda.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10r – PODEJŚCIE 7: PROS/CONS
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 7 — zalety i wady</h2>
+  <div class="pros-cons" style="margin-top:.8em">
+    <div class="box-pro">
+      <h4>✅ Zalety</h4>
+      <ul>
+        <li><strong>Visual AI</strong> — w naszym demo trafił precyzyjnie w zmienione story, zero false positives na 21 niezmienionych</li>
+        <li><strong>Jedyne narzędzie z diff panelem wewnątrz Storybooka</strong> (Eyes Addon) — pozostałe (w tym Argos) tego nie mają</li>
+        <li>Zero-config, zero-code checkpoints — potwierdzone live, zadziałało od razu bez konfiguracji</li>
+        <li>Cross-browser/cross-device rendering w chmurze</li>
+      </ul>
+    </div>
+    <div class="box-con">
+      <h4>⚠️ Wady</h4>
+      <ul>
+        <li><strong>Zdecydowanie najdroższe</strong> — Free tylko 50 Test Units/mies., płatne plany od ~899 USD/mies.</li>
+        <li>Produkt enterprise — może być przewymiarowany dla małego zespołu/projektu</li>
+        <li>Cloud SaaS — dane trafiają do Applitools</li>
+        <li>Nazewnictwo pakietów myli — stary <code>eyes.storybook</code> (deprecated) łatwo pomylić z aktualnym <code>eyes-storybook</code></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
      SLAJD 11 – TABELA PORÓWNAWCZA
 ════════════════════════════════════════════════════════════ -->
 <section>
   <h2>Porównanie — tabela</h2>
-  <table class="cmp-table" style="margin-top:.6em">
+  <table class="cmp-table" style="margin-top:.6em;font-size:.4em;table-layout:fixed;width:100%">
     <thead>
       <tr>
-        <th>Kryterium</th>
+        <th style="width:11%">Kryterium</th>
         <th>🟣 Storycap + Jest</th>
         <th>🔵 Playwright</th>
         <th>🟢 Chromatic</th>
+        <th>🩷 Lost Pixel</th>
+        <th>🟠 Argos</th>
+        <th>🟪 Percy</th>
+        <th>🟦 Applitools</th>
       </tr>
     </thead>
     <tbody>
@@ -934,29 +1492,49 @@ jobs:
         <td class="winner">✅ Wszystkie auto</td>
         <td>❌ Ręcznie</td>
         <td class="winner">✅ Wszystkie auto</td>
+        <td class="winner">✅ Wszystkie auto</td>
+        <td>❌ Wymaga capture (Storycap)</td>
+        <td class="winner">✅ Wszystkie auto</td>
+        <td class="winner">✅ Wszystkie auto</td>
       </tr>
       <tr>
         <td>Diff / Review UI</td>
         <td>❌ Tylko pliki PNG</td>
         <td>⚠️ HTML lokalny</td>
         <td class="winner">✅ UI w chmurze, team review</td>
+        <td>❌ Tylko pliki PNG (bez Platform)</td>
+        <td class="winner">✅ UI w chmurze, team review</td>
+        <td class="winner">✅ UI w chmurze, team review</td>
+        <td class="winner">✅ UI w chmurze + panel w Storybooku</td>
       </tr>
       <tr>
         <td>Multi-browser</td>
         <td>Chromium only</td>
         <td class="winner">Chrome, Firefox, Safari</td>
         <td>Chrome + inne (płatne)</td>
+        <td>Chromium only (domyślnie)</td>
+        <td>Zależy od capture (tu: Chromium only)</td>
+        <td class="winner">Multi (DOM re-render w chmurze)</td>
+        <td class="winner">Multi (cloud grid)</td>
       </tr>
       <tr>
         <td>Testy interakcji (play fn)</td>
         <td>❌ Brak</td>
         <td class="winner">✅ Pełne</td>
         <td class="winner">✅ (play functions)</td>
+        <td>⚠️ Ograniczone</td>
+        <td>❌ Brak (dziedziczy z Storycap)</td>
+        <td>⚠️ Ograniczone</td>
+        <td>⚠️ Ograniczone (zero-code checkpoints)</td>
       </tr>
       <tr>
         <td>Integracja z PR (GitHub)</td>
         <td>⚠️ Artefakt CI</td>
         <td>⚠️ Artefakt CI</td>
+        <td class="winner">✅ Natywny PR check</td>
+        <td>⚠️ Artefakt CI (bez Platform)</td>
+        <td class="winner">✅ Natywny PR check</td>
+        <td class="winner">✅ Natywny PR check</td>
         <td class="winner">✅ Natywny PR check</td>
       </tr>
       <tr>
@@ -964,30 +1542,60 @@ jobs:
         <td>Git (repo)</td>
         <td>Git (repo)</td>
         <td class="winner">Chmura (nie w repo)</td>
+        <td>Git (repo)</td>
+        <td class="winner">Chmura (nie w repo)</td>
+        <td class="winner">Chmura (nie w repo)</td>
+        <td class="winner">Chmura (nie w repo)</td>
       </tr>
       <tr>
         <td>CI/CD gotowość</td>
         <td>Dobra</td>
         <td>Doskonała (Docker)</td>
         <td class="winner">Natywna (GitHub Action)</td>
+        <td>Dobra (wymaga build-storybook)</td>
+        <td>Dobra (2 kroki: capture + upload)</td>
+        <td class="winner">Natywna</td>
+        <td class="winner">Natywna</td>
       </tr>
       <tr>
         <td>Krzywa uczenia</td>
         <td class="winner">Niska (Jest)</td>
         <td>Umiarkowana</td>
         <td class="winner">Niska (1 komenda)</td>
+        <td class="winner">Niska (1 komenda)</td>
+        <td>Umiarkowana (2 narzędzia)</td>
+        <td class="winner">Niska (1 komenda)</td>
+        <td>Umiarkowana (Visual AI, więcej configu)</td>
       </tr>
       <tr>
         <td>Koszt</td>
         <td class="winner">Free</td>
         <td class="winner">Free</td>
         <td>Free do 5k snap/mies.</td>
+        <td class="winner">Free (OSS, bez limitu)</td>
+        <td>Free tier (OSS), dalej pay-as-you-go</td>
+        <td>Free do 5k snap/mies., dalej pay-as-you-go</td>
+        <td>Free 50 Test Units/mies., od ~899 USD/mies.</td>
       </tr>
       <tr>
         <td>Czas dodania nowej story</td>
         <td class="winner">Zero (auto)</td>
         <td>~5 min</td>
         <td class="winner">Zero (auto)</td>
+        <td class="winner">Zero (auto)</td>
+        <td class="winner">Zero (auto, dzięki Storycap)</td>
+        <td class="winner">Zero (auto)</td>
+        <td class="winner">Zero (auto)</td>
+      </tr>
+      <tr>
+        <td>Testowane live w tym POC</td>
+        <td class="winner">✅ Tak</td>
+        <td class="winner">✅ Tak</td>
+        <td class="winner">✅ Tak</td>
+        <td class="winner">✅ Tak</td>
+        <td class="winner">✅ Tak</td>
+        <td>⚠️ Tak — upload się zawieszał</td>
+        <td class="winner">✅ Tak — 28/28, precyzyjny diff</td>
       </tr>
     </tbody>
   </table>
@@ -1251,22 +1859,32 @@ jobs:
      SLAJD 13 – WYNIK POC
 ════════════════════════════════════════════════════════════ -->
 <section>
-  <h2>Wynik POC — wszystkie 3 podejścia</h2>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7em;font-size:.68em;margin:.5em 0">
-    <div style="background:#f5f3ff;border:2px solid #c4b5fd;border-radius:10px;padding:.7em 1em;text-align:center">
+  <h2>Wynik POC — wszystkie 5 podejść</h2>
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.5em;font-size:.56em;margin:.5em 0">
+    <div style="background:#f5f3ff;border:2px solid #c4b5fd;border-radius:10px;padding:.6em .7em;text-align:center">
       <p style="margin:0 0 .2em;font-weight:700;color:#6d28d9">🟣 Storycap + Jest</p>
-      <p style="font-size:1.3em;font-weight:700;color:#15803d;margin:0">18 / 18 ✅</p>
+      <p style="font-size:1.25em;font-weight:700;color:#15803d;margin:0">18 / 18 ✅</p>
       <p style="color:#6b7280;margin:.2em 0 0">Button, Input, Card<br>baseline w <code>__screenshots_baseline__/</code></p>
     </div>
-    <div style="background:#dbeafe;border:2px solid #93c5fd;border-radius:10px;padding:.7em 1em;text-align:center">
+    <div style="background:#dbeafe;border:2px solid #93c5fd;border-radius:10px;padding:.6em .7em;text-align:center">
       <p style="margin:0 0 .2em;font-weight:700;color:#1d4ed8">🔵 Playwright</p>
-      <p style="font-size:1.3em;font-weight:700;color:#15803d;margin:0">18 / 18 ✅</p>
+      <p style="font-size:1.25em;font-weight:700;color:#15803d;margin:0">18 / 18 ✅</p>
       <p style="color:#6b7280;margin:.2em 0 0">~15.6s · HTML report<br>baseline w <code>__snapshots__/</code></p>
     </div>
-    <div style="background:#dcfce7;border:2px solid #86efac;border-radius:10px;padding:.7em 1em;text-align:center">
+    <div style="background:#dcfce7;border:2px solid #86efac;border-radius:10px;padding:.6em .7em;text-align:center">
       <p style="margin:0 0 .2em;font-weight:700;color:#15803d">🟢 Chromatic</p>
-      <p style="font-size:1.3em;font-weight:700;color:#15803d;margin:0">28 snapshots ✅</p>
+      <p style="font-size:1.25em;font-weight:700;color:#15803d;margin:0">28 snapshots ✅</p>
       <p style="color:#6b7280;margin:.2em 0 0">6 komponentów · 42s build<br>Build #1 auto-accepted</p>
+    </div>
+    <div style="background:#fce7f3;border:2px solid #f9a8d4;border-radius:10px;padding:.6em .7em;text-align:center">
+      <p style="margin:0 0 .2em;font-weight:700;color:#be185d">🩷 Lost Pixel</p>
+      <p style="font-size:1.25em;font-weight:700;color:#15803d;margin:0">28 / 28 ✅</p>
+      <p style="color:#6b7280;margin:.2em 0 0">0 różnic · lokalnie<br>baseline w <code>.lostpixel/baseline/</code></p>
+    </div>
+    <div style="background:#ffedd5;border:2px solid #fdba74;border-radius:10px;padding:.6em .7em;text-align:center">
+      <p style="margin:0 0 .2em;font-weight:700;color:#c2410c">🟠 Argos</p>
+      <p style="font-size:1.25em;font-weight:700;color:#c2410c;margin:0">28 gotowych ⏳</p>
+      <p style="color:#6b7280;margin:.2em 0 0">screenshoty w <code>__screenshots__/</code><br>upload wymaga <code>ARGOS_TOKEN</code></p>
     </div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.7em;font-size:.65em;margin-top:.5em">
@@ -1422,19 +2040,19 @@ jobs:
 ════════════════════════════════════════════════════════════ -->
 <section>
   <h2 style="margin-bottom:.5em">Dziękuję</h2>
-  <p style="font-size:.8em;color:#6b7280;margin-bottom:.8em">Repozytorium POC zawiera działający kod dla wszystkich 3 podejść</p>
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.8em;font-size:.65em">
-    <div style="background:#f5f3ff;border-radius:10px;padding:.8em">
+  <p style="font-size:.8em;color:#6b7280;margin-bottom:.8em">Repozytorium POC zawiera działający kod dla wszystkich 5 podejść</p>
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:.5em;font-size:.56em">
+    <div style="background:#f5f3ff;border-radius:10px;padding:.6em">
       <p style="margin:0 0 .4em;font-weight:700;color:#6d28d9">🟣 Storycap + Jest</p>
-      <pre style="font-size:.9em;margin:0"><code class="language-bash"># Capture + porównaj
+      <pre style="font-size:.6em;margin:0"><code class="language-bash"># Capture + porównaj
 npm run test:visual:storycap
 
 # Aktualizuj baseline
 npm run test:visual:storycap:update</code></pre>
     </div>
-    <div style="background:#dbeafe;border-radius:10px;padding:.8em">
+    <div style="background:#dbeafe;border-radius:10px;padding:.6em">
       <p style="margin:0 0 .4em;font-weight:700;color:#1d4ed8">🔵 Playwright</p>
-      <pre style="font-size:.9em;margin:0"><code class="language-bash"># Stwórz baseline
+      <pre style="font-size:.6em;margin:0"><code class="language-bash"># Stwórz baseline
 npm run test:visual:playwright:update
 
 # Wykryj regresje
@@ -1443,14 +2061,30 @@ npm run test:visual:playwright
 # HTML raport
 npx playwright show-report</code></pre>
     </div>
-    <div style="background:#dcfce7;border-radius:10px;padding:.8em">
+    <div style="background:#dcfce7;border-radius:10px;padding:.6em">
       <p style="margin:0 0 .4em;font-weight:700;color:#15803d">🟢 Chromatic</p>
-      <pre style="font-size:.9em;margin:0"><code class="language-bash"># Wyślij build do chmury
+      <pre style="font-size:.6em;margin:0"><code class="language-bash"># Wyślij build do chmury
 npx chromatic \
   --project-token=chpt_xxx
 
 # Z env variable
 npm run test:visual:chromatic</code></pre>
+    </div>
+    <div style="background:#fce7f3;border-radius:10px;padding:.6em">
+      <p style="margin:0 0 .4em;font-weight:700;color:#be185d">🩷 Lost Pixel</p>
+      <pre style="font-size:.6em;margin:0"><code class="language-bash"># Stwórz baseline
+npm run test:visual:lostpixel:update
+
+# Wykryj regresje
+npm run test:visual:lostpixel</code></pre>
+    </div>
+    <div style="background:#ffedd5;border-radius:10px;padding:.6em">
+      <p style="margin:0 0 .4em;font-weight:700;color:#c2410c">🟠 Argos</p>
+      <pre style="font-size:.6em;margin:0"><code class="language-bash"># Capture + upload
+npm run test:visual:argos
+
+# Z env variable
+export ARGOS_TOKEN=...</code></pre>
     </div>
   </div>
   <p style="font-size:1.2em;margin-top:1em">❓ Pytania?</p>

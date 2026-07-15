@@ -205,3 +205,66 @@ rm -rf __screenshots_baseline__ __snapshots__
 npm run test:visual:storycap:update
 npm run test:visual:playwright:update
 ```
+
+---
+
+## Approach: Lost Pixel
+
+[Lost Pixel](https://lost-pixel.com) is an open-source alternative to Chromatic. In OSS mode (used here) it runs **entirely locally and for free**, with no snapshot limits and nothing sent to a cloud service. Like Chromatic — and unlike Argos — it has **auto-discovery of stories**: it doesn't need a separate capture tool, it reads the built Storybook directly.
+
+### How it works
+
+1. `npm run build-storybook` produces a static build in `storybook-static/`.
+2. `lost-pixel` reads `storybook-static/`, auto-discovers every story (no test code to write).
+3. Each story is rendered headlessly via Playwright and screenshotted.
+4. The screenshot is compared against the local baseline in `.lostpixel/baseline/`.
+5. Any differences are written to `.lostpixel/difference/` and the run exits non-zero.
+
+### Running it
+
+```bash
+# First run — creates baselines
+npm run test:visual:lostpixel:update
+
+# Subsequent runs — detects regressions
+npm run test:visual:lostpixel
+```
+
+No account or token needed for OSS mode.
+
+### POC result
+
+28/28 stories passing, 0 differences — baseline committed under `.lostpixel/baseline/`.
+
+`lostpixel.config.ts` configures OSS mode (`storybookShots`). It also has a commented-out block for **Lost Pixel Platform**, the paid hosted-review-UI mode — switching to it later wouldn't require rewriting any tests.
+
+---
+
+## Approach: Argos CI
+
+[Argos](https://argos-ci.com) is a cloud-based visual review platform, similar in spirit to Chromatic. The key difference: Argos does **not** render Storybook itself — it's a generic screenshot upload/diff/review service, so it needs a separate capture step to produce the images. This project reuses Storycap (see Approach 1) for that.
+
+### How it works
+
+1. `storycap` captures every story into `__screenshots__/` (same mechanism as Approach 1).
+2. `argos upload __screenshots__` sends the images to Argos.
+3. Argos diffs them against the previous accepted build for the branch and posts a PR check.
+4. A reviewer approves/denies changes in the Argos web UI (or via `argos review` / `argos comment` from the CLI).
+
+### Running it
+
+Requires an account at [argos-ci.com](https://argos-ci.com) and a repository token:
+
+```bash
+export ARGOS_TOKEN=<repository token>
+npm run test:visual:argos
+```
+
+There is no `:update` variant — like Chromatic, baseline approval happens by accepting the build in the Argos UI, not by overwriting local files.
+
+### Notable CLI capabilities
+
+- `--parallel` / `--parallel-total` / `--parallel-index` — combine sharded CI runs into one build.
+- `--threshold` — tune diff sensitivity per upload.
+- `argos change` — mark a changed screenshot as flaky so it stops failing builds.
+- `argos analytics` — build/screenshot usage analytics for an account.

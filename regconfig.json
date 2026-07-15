@@ -1,0 +1,17 @@
+{
+  "core": {
+    "workingDir": ".reg",
+    "actualDir": "__screenshots__",
+    "thresholdRate": 0.02,
+    "addonModules": [
+      "reg-keygen-git-hash-plugin",
+      "reg-publish-s3-plugin"
+    ]
+  },
+  "plugins": {
+    "reg-keygen-git-hash-plugin": {},
+    "reg-publish-s3-plugin": {
+      "bucketName": "TODO-nazwa-waszego-bucketu"
+    }
+  }
+}
