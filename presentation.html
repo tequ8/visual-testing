@@ -994,14 +994,14 @@ jobs:
     <div class="flow-box" style="background:#ffedd5;border-color:#ea580c">UI Review<br>w przeglądarce</div>
   </div>
   <div class="timeline">
-    <div class="tl-item"><strong>1.</strong> <code>npm run capture:storycap</code> — Argos nie renderuje Storybooka sam, więc screenshoty generuje Storycap (jak w Podejściu 1)</div>
+    <div class="tl-item"><strong>1.</strong> <code>npm run capture:storycap</code> — uniwersalna ścieżka: Argos nie renderuje Storybooka sam, więc screenshoty generuje Storycap (jak w Podejściu 1)</div>
     <div class="tl-item"><strong>2.</strong> <code>argos upload __screenshots__ --token=$ARGOS_TOKEN</code> — wysyła PNG do Argos</div>
     <div class="tl-item"><strong>3.</strong> Argos porównuje z poprzednim zaakceptowanym buildem dla brancha</div>
     <div class="tl-item"><strong>4.</strong> Automatyczny PR check z linkiem do review</div>
     <div class="tl-item"><strong>5.</strong> Reviewer zatwierdza lub odrzuca zmiany w UI Argos — jak w Chromatic</div>
   </div>
   <div style="background:#fff7ed;border-left:4px solid #ea580c;border-radius:6px;padding:.5em 1em;font-size:.65em;margin-top:.6em">
-    <strong>Status POC:</strong> <strong>28 screenshotów</strong> gotowych do uploadu w <code>__screenshots__/</code> (te same co Podejście 1) — uruchomienie wymaga konta i tokenu na <code>argos-ci.com</code> (<code>ARGOS_TOKEN</code>)
+    <strong>✅ Zweryfikowane live:</strong> Storycap + upload przetestowane w tej sesji (buildy #1–#9). Odkryliśmy też, że Argos ma <strong>drugą, natywną ścieżkę</strong> bez Storycap — patrz następny slajd.
   </div>
 </section>
 
@@ -1030,7 +1030,7 @@ npm run test:visual:argos</code></pre>
      --token=$ARGOS_TOKEN"
 }</code></pre>
       <p style="font-size:.63em;color:#6b7280;margin-top:.5em">
-        💡 W przeciwieństwie do Chromatic, Argos nie renderuje Storybooka — to generyczne narzędzie do uploadu i diffowania screenshotów z dowolnego źródła (Storycap, Playwright, Cypress...)
+        💡 To ścieżka uniwersalna — Argos jako generyczne narzędzie do uploadu i diffowania screenshotów z dowolnego źródła (Storycap, Playwright, Cypress...). Istnieje też druga, natywna ścieżka bez Storycap — patrz box poniżej.
       </p>
     </div>
     <div>
@@ -1063,6 +1063,34 @@ jobs:
         <div class="flow-box" style="background:#ffedd5;border-color:#ea580c;font-size:.6em">Merge<br>✅</div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10hg – PODEJŚCIE 4: ARGOS — NATYWNA INTEGRACJA ZE STORYBOOKIEM
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Podejście 4 — druga ścieżka: Argos bez Storycap</h2>
+  <p style="font-size:.65em;color:#6b7280;margin:.1em 0 .6em">Odkryte i przetestowane live w tej sesji — koryguje wcześniejsze założenie "Argos zawsze wymaga zewnętrznego capture"</p>
+
+  <div class="timeline">
+    <div class="tl-item"><strong>1.</strong> Pakiet <code>@argos-ci/storybook</code> + Vitest browser mode (<code>@storybook/addon-vitest</code>) — auto-discovery story, bez Storycap</div>
+    <div class="tl-item"><strong>2.</strong> <strong>Warunek:</strong> Storybook musi stać na builderze <strong>Vite</strong>, nie webpack. Nasz projekt (Angular) domyślnie używał webpacka — trzeba było zmigrować na <code>@storybook/angular-vite</code></div>
+    <div class="tl-item"><strong>3.</strong> Ta migracja wymaga <strong>Angular 21+</strong> — u nas spełnione, ale to nie jest opcja dla starszych projektów Angularowych ani innych frameworków bez Vite-buildera</div>
+    <div class="tl-item"><strong>4.</strong> Efekt: <code>CI=true ARGOS_TOKEN=... npx vitest run --project=storybook</code> — jedna komenda, zero Storycap, build wysłany do Argos</div>
+  </div>
+
+  <pre style="font-size:.5em;margin-top:.5em"><code class="language-typescript">// vitest.config.ts
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+import { argosVitestPlugin } from '@argos-ci/storybook/vitest-plugin';
+
+plugins: [
+  storybookTest({ configDir: '.storybook' }),
+  argosVitestPlugin({ uploadToArgos: !!process.env.CI }),
+]</code></pre>
+
+  <div style="background:#fff7ed;border-left:4px solid #ea580c;border-radius:6px;padding:.5em 1em;font-size:.63em;margin-top:.6em">
+    <strong>Pułapki, na które trafiliśmy live:</strong> wersja <code>@storybook/addon-vitest</code> musi dokładnie pasować do wersji <code>storybook</code> (inaczej błąd importu); brakujący peer dependency <code>@angular/animations</code>; a po migracji ze Storycap na Vitest <strong>Argos zresetował baseline</strong> — inny schemat nazw screenshotów = wszystko widziane jako "28 added + 28 removed", nie "changed".
   </div>
 </section>
 

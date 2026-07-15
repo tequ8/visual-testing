@@ -9,7 +9,7 @@ Dla Percy i Applitools — wyłącznie z dokumentacji (nie testowane live, brak 
 | | Silnik porównania | Gdzie się wykonuje capture | Gdzie się wykonuje diff |
 |---|---|---|---|
 | **Chromatic** | Pixel-diff odporny na anti-aliasing + TurboSnap (pomija niezmienione story) | W chmurze Chromatic (własne przeglądarki Chrome/Firefox/Safari/Edge) | W chmurze Chromatic |
-| **Argos** | Pixel-diff + własny "stabilization engine" (filtruje anti-aliasing, font rendering, dynamic content) | Lokalnie/w CI, przez zewnętrzne narzędzie (u nas: Storycap) | W chmurze Argos |
+| **Argos** | Pixel-diff + własny "stabilization engine" (filtruje anti-aliasing, font rendering, dynamic content) | Lokalnie/w CI — przez Storycap (uniwersalnie) albo natywnie przez Vitest, jeśli Storybook stoi na builderze Vite | W chmurze Argos |
 | **Percy** | DOM-snapshot → re-render w wielu przeglądarkach/szerokościach → pixel-diff | Lokalnie (SDK przechwytuje DOM, nie obraz) | Rendering + diff w chmurze Percy/BrowserStack |
 | **Applitools Eyes** | **Visual AI** (computer vision) — ocenia czy różnica jest wizualnie znacząca, nie porównuje piksel-po-pikselu | Lokalnie (Storybook renderowany lokalnie) lub w chmurowym gridzie | Visual AI w chmurze Applitools |
 
@@ -33,11 +33,13 @@ To jest chyba najważniejsza oś różnic do pokazania zespołowi: **3 z 4 narz�
 
 ## 2. Argos CI
 
-**Jak działa:** W przeciwieństwie do Chromatic **nie renderuje Storybooka samodzielnie** — potrzebuje gotowych screenshotów z zewnętrznego narzędzia (u nas: Storycap, ale może to być też Playwright, Cypress, Puppeteer). `argos upload` wysyła gotowe PNG-i, Argos tylko porównuje i przechowuje.
+**Jak działa:** Dwie ścieżki, obie realnie sprawdzone w naszym demo:
+1. **Storycap (uniwersalna)** — Argos sam **nie renderuje** Storybooka, potrzebuje gotowych screenshotów z zewnętrznego narzędzia (Storycap, Playwright, Cypress, Puppeteer). `argos upload` wysyła gotowe PNG-i.
+2. **Natywna integracja przez `@argos-ci/storybook`** — Argos **jednak potrafi auto-wykrywać story samodzielnie**, ale tylko jeśli Storybook stoi na builderze **Vite** (`@storybook/addon-vitest` + Vitest browser mode). Odpaliliśmy to live: `npx vitest run --project=storybook` z `ARGOS_TOKEN` w env → realny upload bez Storycap, zero osobnego kroku capture.
 
 **Silnik:** Pixel-diff, ale z własnym "stabilization engine", który stara się odróżnić prawdziwą regresję od szumu (anti-aliasing, subpikselowe różnice fontów, migoczące elementy dynamiczne) — bez dopłat za "heurystyczny" silnik, jak to bywa u innych.
 
-**Storybook:** Pośrednia — deklarują "Storybook support", ale w praktyce (i w naszym demo) wymaga to zewnętrznego narzędzia typu Storycap do wygenerowania screenshotów; Argos sam w sobie jest generycznym uploaderem/diff-serwisem.
+**Storybook:** Zależy od buildera. Nasz projekt (Angular) domyślnie używał webpacka (`@storybook/angular`) — tam natywna integracja **nie działa** (addon-vitest wymaga wirtualnego modułu z Vite). Zadziałało dopiero po migracji na `@storybook/angular-vite` (wymaga Angular 21+, u nas akurat spełnione). Dla starszych wersji Angulara albo innych builderów webpackowych — Storycap zostaje jedyną opcją.
 
 **Koszty (2026):** Hobby (free) — **5 000 screenshotów/mies. na zawsze, $0**. Pro od **$100/mies.** za 35 000 screenshotów, overage $0.004/screenshot (ale tylko **$0.0015 za screenshot ze Storybooka** — wyraźnie taniej). Enterprise — custom, SAML SSO, 99.99% SLA.
 
@@ -45,6 +47,8 @@ To jest chyba najważniejsza oś różnic do pokazania zespołowi: **3 z 4 narz�
 - Build wgrany **bezpośrednio na branch bazowy** (main→main) jest **automatycznie zatwierdzany** — bo nie ma PR-a, który mógłby zostać zablokowany, więc build po prostu staje się nowym baseline'em.
 - Realny **status "czeka na recenzję"** (blokujący merge PR-a) pojawia się dopiero, gdy build pochodzi z **osobnego brancha** porównanego z main.
 - **Approve/reject przez CLI** (`argos review create`) wymaga **personal access tokena** — zwykły token repozytorium używany w CI (ten z `ARGOS_TOKEN`) może tylko wysyłać i czytać buildy, nie może ich zatwierdzać. To sensowny podział uprawnień: CI wysyła dane, decyzję podejmuje człowiek z własnym kontem.
+- **Migracja Storycap → natywny Vitest resetuje baseline** — inny schemat nazewnictwa screenshotów sprawia, że Argos widzi stary i nowy zestaw jako całkowicie różne pliki (u nas: 28 added + 28 removed zamiast "changed"), nie płynne przejście.
+- Wymagania techniczne natywnej integracji bywają kruche: dopasowanie wersji `@storybook/addon-vitest` do wersji `storybook`, brakujący peer dep `@angular/animations` — nic z tego nie jest oczywiste z samej dokumentacji.
 
 ---
 
@@ -79,6 +83,6 @@ To jest chyba najważniejsza oś różnic do pokazania zespołowi: **3 z 4 narz�
 ## Podsumowanie jednym zdaniem na tool
 
 - **Chromatic** — najgłębsza integracja ze Storybookiem + TurboSnap ograniczający koszty, ale nadal pixel-diff.
-- **Argos** — generyczny, tani, elastyczny (dowolne źródło screenshotów), ale wymaga zewnętrznego capture i ma subtelną logikę auto-approve.
+- **Argos** — generyczny, tani, elastyczny (dowolne źródło screenshotów lub natywny Vitest na Vite-builderze), ale ma subtelną logikę auto-approve i kruchą natywną integrację.
 - **Percy** — unikalne podejście DOM-snapshot (multi-browser bez wielokrotnego capture), część ekosystemu BrowserStack.
 - **Applitools Eyes** — jedyny z Visual AI zamiast pixel-diff i jedyny z panelem diff wewnątrz Storybooka, ale najdroższy.

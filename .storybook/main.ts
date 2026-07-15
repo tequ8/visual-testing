@@ -1,4 +1,4 @@
-import type { StorybookConfig } from '@storybook/angular';
+import type { StorybookConfig } from '@storybook/angular-vite';
 
 const config: StorybookConfig = {
   stories: [
@@ -9,9 +9,10 @@ const config: StorybookConfig = {
     '@storybook/addon-a11y',
     '@storybook/addon-docs',
     '@storybook/addon-onboarding',
+    '@storybook/addon-vitest',
     '@applitools/eyes-storybook-addon',
   ],
-  framework: '@storybook/angular',
+  framework: '@storybook/angular-vite',
 };
 
 export default config;

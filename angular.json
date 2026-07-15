@@ -73,19 +73,17 @@
           "builder": "@angular/build:unit-test"
         },
         "storybook": {
-          "builder": "@storybook/angular:start-storybook",
+          "builder": "@storybook/angular-vite:start-storybook",
           "options": {
             "configDir": ".storybook",
-            "browserTarget": "visual-testing-poc:build",
             "compodoc": false,
             "port": 6006
           }
         },
         "build-storybook": {
-          "builder": "@storybook/angular:build-storybook",
+          "builder": "@storybook/angular-vite:build-storybook",
           "options": {
             "configDir": ".storybook",
-            "browserTarget": "visual-testing-poc:build",
             "compodoc": false,
             "outputDir": "storybook-static"
           }
