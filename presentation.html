@@ -1153,13 +1153,71 @@ plugins: [
     <div class="box-con">
       <h4>⚠️ Wady</h4>
       <ul>
-        <li><strong>Brak zero-config</strong> — w odróżnieniu od Chromatic wymaga osobnego kroku capture (tu: Storycap), więc dziedziczy jego ograniczenia (Chromium only, brak play functions)</li>
+        <li><strong>Zero-config tylko warunkowo</strong> — natywna integracja (bez Storycap) wymaga Storybooka na builderze Vite; bez tego dziedziczy ograniczenia Storycap (Chromium only, brak play functions)</li>
         <li>Dwa narzędzia do utrzymania zamiast jednego (capture + upload) — więcej ruchomych części w CI</li>
         <li>Screenshoty i metadane trafiają do zewnętrznego serwera — ta sama kwestia bezpieczeństwa co przy Chromatic</li>
         <li>Mniejszy ekosystem i społeczność niż Chromatic (który jest ściśle zintegrowany ze Storybookiem)</li>
         <li>Konto i token wymagane do startu</li>
       </ul>
     </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10ii – PODEJŚCIE 4: ARGOS VS CHROMATIC
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Argos vs Chromatic — bezpośrednie porównanie</h2>
+  <div style="overflow-x:auto;margin-top:.6em">
+    <table class="cmp-table" style="font-size:.58em;table-layout:fixed;width:100%">
+      <thead>
+        <tr>
+          <th style="width:24%">Kryterium</th>
+          <th>🟢 Chromatic</th>
+          <th>🟠 Argos</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Renderowanie story</td>
+          <td class="winner">Sam renderuje w chmurze (własne przeglądarki)</td>
+          <td>Storycap (uniwersalnie) <strong>lub</strong> natywnie przez Vitest — tylko na builderze Vite</td>
+        </tr>
+        <tr>
+          <td>Optymalizacja kosztów</td>
+          <td class="winner">TurboSnap — renderuje tylko story dotknięte zmianą (−75–90%)</td>
+          <td>Brak takiego mechanizmu — płacisz za każdy wysłany screenshot</td>
+        </tr>
+        <tr>
+          <td>Integracja ze Storybookiem</td>
+          <td class="winner">Najgłębsza — twórcy Storybooka, dedykowany addon w UI</td>
+          <td>Dobra, ale wymaga capture albo migracji buildera na Vite</td>
+        </tr>
+        <tr>
+          <td>Cena (free / Pro)</td>
+          <td>5k/mies. free · $149/mies. za 35k</td>
+          <td class="winner">5k/mies. free <strong>na zawsze</strong> · $100/mies. za 35k</td>
+        </tr>
+        <tr>
+          <td>Elastyczność źródła screenshotów</td>
+          <td>Tylko Storybook</td>
+          <td class="winner">Dowolne: Storycap, Playwright, Cypress, natywny Vitest</td>
+        </tr>
+        <tr>
+          <td>Auto-approve buildów</td>
+          <td>Nie sprawdzaliśmy live w tej sesji</td>
+          <td>Tak, warunkowo — push na main auto-zatwierdza się (brak PR-a do zablokowania)</td>
+        </tr>
+        <tr>
+          <td>UI Review</td>
+          <td class="winner">Tak — UI Tests + osobne UI Review dla designerów</td>
+          <td class="winner">Tak — diff z suwakiem, PR check, approve/reject (CLI wymaga personal access tokena)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="background:#1e1b4b;border-radius:8px;padding:.6em 1em;font-size:.64em;margin-top:.6em;color:#c7d2fe">
+    <strong style="color:#a5b4fc">W skrócie:</strong> Chromatic jest bardziej "zamknięty", ale wygodniejszy od ręki i tańszy w praktyce przy dużej skali (TurboSnap). Argos jest tańszy bazowo i elastyczniejszy co do źródła danych, ale wymaga więcej własnej układanki (Storycap albo migracja na Vite) i ma mniej oczywistą logikę auto-approve, którą trzeba zrozumieć zanim się na niej oprze branch protection.
   </div>
 </section>
 
@@ -1366,6 +1424,64 @@ npx percy storybook ./storybook-static</code></pre>
 </section>
 
 <!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10oo – PODEJŚCIE 6: PERCY VS CHROMATIC
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Percy vs Chromatic — bezpośrednie porównanie</h2>
+  <div style="overflow-x:auto;margin-top:.6em">
+    <table class="cmp-table" style="font-size:.58em;table-layout:fixed;width:100%">
+      <thead>
+        <tr>
+          <th style="width:24%">Kryterium</th>
+          <th>🟢 Chromatic</th>
+          <th>🟪 Percy</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Silnik</td>
+          <td>Pixel-diff — renderuje realną stronę w chmurze</td>
+          <td class="winner">DOM-snapshot — przechwytuje HTML+CSS, renderuje po swojej stronie w wielu konfiguracjach naraz</td>
+        </tr>
+        <tr>
+          <td>Multi-browser/multi-width</td>
+          <td>Wymaga osobnego renderu per przeglądarka</td>
+          <td class="winner">Jeden capture → wiele przeglądarek/szerokości z tego samego DOM-u</td>
+        </tr>
+        <tr>
+          <td>Ograniczenia silnika</td>
+          <td class="winner">Renderuje realnie — canvas/WebGL/animacje jak w oryginale</td>
+          <td>DOM-snapshot ma trudniejszy przypadek dla canvas, WebGL, złożonych animacji</td>
+        </tr>
+        <tr>
+          <td>Storybook</td>
+          <td class="winner">Natywne SDK, zero-config auto-discovery</td>
+          <td class="winner">Natywne SDK (<code>@percy/storybook</code>), zero-config auto-discovery</td>
+        </tr>
+        <tr>
+          <td>Optymalizacja kosztów</td>
+          <td class="winner">TurboSnap (−75–90% snapshotów)</td>
+          <td>Brak takiego mechanizmu</td>
+        </tr>
+        <tr>
+          <td>Free tier</td>
+          <td>5 000 snap/mies.</td>
+          <td class="winner">5 000 snap/mies. + unlimited users i projektów</td>
+        </tr>
+        <tr>
+          <td>Ekosystem</td>
+          <td>Samodzielny produkt</td>
+          <td>Część BrowserStack — plus, jeśli już macie tam konto (cross-browser/device testing)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="background:#1e1b4b;border-radius:8px;padding:.6em 1em;font-size:.64em;margin-top:.6em;color:#c7d2fe">
+    <strong style="color:#a5b4fc">W skrócie:</strong> Percy różni się architektonicznie od Chromatic — DOM-snapshot zamiast pixel-diff pozwala pokryć wiele przeglądarek/szerokości z jednego capture, co jest atrakcyjne przy szerokiej macierzy konfiguracji testowych. Chromatic wygrywa tam, gdzie liczy się wierność renderu (realne przeglądarki) i kontrola kosztów przy dużej skali (TurboSnap).
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
      SLAJD 10p – PODEJŚCIE 7: APPLITOOLS EYES (WPROWADZENIE)
 ════════════════════════════════════════════════════════════ -->
 <section>
@@ -1493,6 +1609,64 @@ jobs:
         <li>Nazewnictwo pakietów myli — stary <code>eyes.storybook</code> (deprecated) łatwo pomylić z aktualnym <code>eyes-storybook</code></li>
       </ul>
     </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SLAJD 10rr – PODEJŚCIE 7: APPLITOOLS VS CHROMATIC
+════════════════════════════════════════════════════════════ -->
+<section>
+  <h2>Applitools Eyes vs Chromatic — bezpośrednie porównanie</h2>
+  <div style="overflow-x:auto;margin-top:.6em">
+    <table class="cmp-table" style="font-size:.58em;table-layout:fixed;width:100%">
+      <thead>
+        <tr>
+          <th style="width:24%">Kryterium</th>
+          <th>🟢 Chromatic</th>
+          <th>🟦 Applitools Eyes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Silnik</td>
+          <td>Pixel-diff z tolerancją na anti-aliasing</td>
+          <td class="winner">Visual AI (computer vision) — ocenia, czy różnica jest wizualnie znacząca, nie porównuje piksel-po-pikselu</td>
+        </tr>
+        <tr>
+          <td>Panel diff wewnątrz Storybooka</td>
+          <td>Osobny addon <code>visual-tests</code> pokazujący status</td>
+          <td class="winner">Dedykowany Eyes Addon z pełnym porównaniem obraz-obok-obrazu, bezpośrednio w panelu</td>
+        </tr>
+        <tr>
+          <td>Storybook</td>
+          <td class="winner">Natywne SDK, zero-config auto-discovery</td>
+          <td class="winner">Natywne SDK (<code>eyes-storybook</code>), zero-config auto-discovery</td>
+        </tr>
+        <tr>
+          <td>Optymalizacja kosztów</td>
+          <td class="winner">TurboSnap (−75–90% snapshotów)</td>
+          <td>Brak takiego mechanizmu</td>
+        </tr>
+        <tr>
+          <td>Free tier</td>
+          <td class="winner">5 000 snapshotów/mies.</td>
+          <td>50 Test Units/mies. — najniższy z porównywanych</td>
+        </tr>
+        <tr>
+          <td>Cena Pro</td>
+          <td class="winner">$149/mies. za 35 000 snapshotów</td>
+          <td>~$899/mies. (rocznie) — zdecydowanie najdroższe</td>
+        </tr>
+        <tr>
+          <td>Cross-browser/cross-device</td>
+          <td>Tak, w chmurze Chromatic</td>
+          <td class="winner">Tak, w chmurze Applitools — plus dedykowany grid urządzeń mobilnych</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div style="background:#1e1b4b;border-radius:8px;padding:.6em 1em;font-size:.64em;margin-top:.6em;color:#c7d2fe">
+    <strong style="color:#a5b4fc">W skrócie:</strong> Applitools stawia na jakość sygnału — Visual AI i panel bezpośrednio w Storybooku to unikalne przewagi, których nie ma żadne inne z porównywanych narzędzi. Chromatic wygrywa kosztowo (TurboSnap, tańszy Pro) i ma szerszy, bardziej dojrzały ekosystem — Applitools ma sens tam, gdzie liczy się precyzja detekcji i integracja z workflow developera bardziej niż cena.
   </div>
 </section>
 
